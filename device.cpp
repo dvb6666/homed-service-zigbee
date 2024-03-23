@@ -9,7 +9,7 @@
 
 DeviceList::DeviceList(QSettings *config, QObject *parent) : QObject(parent), m_config(config), m_databaseTimer(new QTimer(this)), m_propertiesTimer(new QTimer(this)), m_names(false), m_permitJoin(false), m_sync(false)
 {
-    QFile file;
+    QFile file("/usr/share/homed-common/expose.json");
 
     PropertyObject::registerMetaTypes();
     ActionObject::registerMetaTypes();
@@ -23,8 +23,6 @@ DeviceList::DeviceList(QSettings *config, QObject *parent) : QObject(parent), m_
     m_optionsFile.setFileName(m_config->value("device/options", "/opt/homed-zigbee/options.json").toString());
     m_externalDir.setPath(m_config->value("device/external", "/opt/homed-zigbee/external").toString());
     m_libraryDir.setPath(m_config->value("device/library", "/usr/share/homed-zigbee").toString());
-
-    file.setFileName(QString("%1/expose.json").arg(m_libraryDir.path()));
 
     if (file.open(QFile::ReadOnly))
     {
@@ -240,9 +238,6 @@ void DeviceList::setupDevice(const Device &device)
                     if (found)
                         check = true;
 
-                    if (json.contains("description"))
-                        device->setDescription(json.value("description").toString());
-
                     if (json.contains("options"))
                     {
                         QJsonObject options = json.value("options").toObject();
@@ -258,6 +253,7 @@ void DeviceList::setupDevice(const Device &device)
                     for (int i = 0; i < endpoints.count(); i++)
                         setupEndpoint(endpoint(device, static_cast <quint8> (endpoints.at(i).toInt())), json, endpoinId.type() == QJsonValue::Array);
 
+                    device->setDescription(json.value("description").toString());
                     device->setSupported(true);
                 }
             }
@@ -434,7 +430,7 @@ void DeviceList::setupEndpoint(const Endpoint &endpoint, const QJsonObject &json
 
     for (auto it = exposes.begin(); it != exposes.end(); it++)
     {
-        QString exposeName = it->toString(), itemName = it->toString().split('_').value(0), optionName = multiple ? QString("%1_%2").arg(itemName, QString::number(endpoint->id())) : itemName;
+        QString exposeName = it->toString(), itemName = exposeName.split('_').value(0), optionName = multiple ? QString("%1_%2").arg(itemName, QString::number(endpoint->id())) : itemName;
         QMap <QString, QVariant> option = m_exposeOptions.value(itemName).toMap();
         Expose expose;
         int type;
@@ -872,6 +868,7 @@ void DeviceList::unserializeDevices(const QJsonArray &devices)
                 device->setVersion(static_cast <quint8> (json.value("version").toInt()));
                 device->setManufacturerName(json.value("manufacturerName").toString());
                 device->setModelName(json.value("modelName").toString());
+                device->setNote(json.value("note").toString());
                 device->setLogicalType(static_cast <LogicalType> (json.value("logicalType").toInt()));
                 device->setManufacturerCode(static_cast <quint16> (json.value("manufacturerCode").toInt()));
                 device->setPowerSource(static_cast <quint8> (json.value("powerSource").toInt()));
@@ -1009,6 +1006,9 @@ QJsonArray DeviceList::serializeDevices(void)
 
                 if (!device->description().isEmpty())
                     json.insert("description", device->description());
+
+                if (!device->note().isEmpty())
+                    json.insert("note", device->note());
             }
 
             if (!device->endpoints().isEmpty())

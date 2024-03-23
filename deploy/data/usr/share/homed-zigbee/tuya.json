@@ -771,7 +771,7 @@
     },
     {
       "description":    "TUYA TS0001/TS0011 1-Channel Switch",
-      "modelNames":     ["_TYZB01_4vgantdz", "_TYZB01_reyozfcg", "_TYZB01_xfpdrwvc", "TZ3000_9hpxg80k", "_TZ3000_hhiodade", "_TZ3000_l8fsgo6p", "_TZ3000_oex7egmt", "_TZ3000_wrhhi5h2"],
+      "modelNames":     ["_TYZB01_4vgantdz", "_TYZB01_reyozfcg", "_TYZB01_xfpdrwvc", "_TZ3000_5ftkaulg", "TZ3000_9hpxg80k", "_TZ3000_hhiodade", "_TZ3000_l8fsgo6p", "_TZ3000_oex7egmt", "_TZ3000_wrhhi5h2"],
       "properties":     ["status", "tuyaIndicatorMode", "tuyaPowerOnStatus"],
       "actions":        ["status", "tuyaIndicatorMode", "tuyaPowerOnStatus"],
       "bindings":       ["status"],
@@ -898,6 +898,16 @@
       "endpointId":     [1, 2, 3, 4, 5, 6]
     },
     {
+      "description":    "TUYA TS0001 or TS000F 1-Channel Relay with Power Monitoring",
+      "modelNames":     ["_TZ3000_g92baclx", "_TZ3000_kqvb5akv", "_TZ3000_mkhkxx1p", "_TZ3000_qnejhcsu", "_TZ3000_tgddllx4", "_TZ3000_x3ewpzyr", "_TZ3000_xkap8wtb"],
+      "properties":     ["status", "energy", "voltage", "current", "power", "tuyaSwitchType", "tuyaPowerOnStatus"],
+      "actions":        ["status", "tuyaSwitchType", "tuyaPowerOnStatus"],
+      "bindings":       ["status", "energy", "power"],
+      "reportings":     ["status", "energy", "voltage", "current", "power"],
+      "exposes":        ["switch", "switchType", "powerOnStatus", "energy", "voltage", "current", "power"],
+      "options":        {"switchType": {"enum": ["toggle", "static", "momentary"]}, "powerOnStatus": {"enum": ["off", "on", "previous"]}, "energyDivider": 100, "currentDivider": 1000, "tuyaMagic": true, "skipAttributeRead": true}
+    },
+    {
       "description":    "TUYA TS011F 1-Channel Relay with Power Monitoring",
       "modelNames":     ["_TZ3000_303avxxt", "_TZ3000_8bxrzyxz", "_TZ3000_cayepv1a", "_TZ3000_ky0fq4ho", "_TZ3000_lepzuhto", "_TZ3000_qeuvnohg", "_TZ3000_qystbcjg"],
       "properties":     ["status", "energy", "voltage", "current", "power", "tuyaPowerOnStatus"],
@@ -928,8 +938,8 @@
       "endpointId":     [1, 2]
     },
     {
-      "description":    "TUYA TS011F Smart Plug with Power Monitoring",
-      "modelNames":     ["_TZ3000_0yxeawjt", "_TZ3000_1h2x4akh", "_TZ3000_5f43h46b", "_TZ3000_7dndcnnb", "_TZ3000_9vo5icau", "_TZ3000_aim0ztek", "_TZ3000_amdymr7l", "_TZ3000_b28wrpvx", "_TZ3000_cehuw1lw", "_TZ3000_cjrngdr3", "_TZ3000_cphmq0q7", "_TZ3000_dksbtrzs", "_TZ3000_dpo1ysak", "_TZ3000_ew3ldmgx", "_TZ3000_f1bapcit", "_TZ3000_fgwhjm9j", "_TZ3000_fukaa7nc", "_TZ3000_gjnozsaz", "_TZ3000_gznh2xla", "_TZ3000_gvn91tmx", "_TZ3000_hdopuwv6", "_TZ3000_idrffznf", "_TZ3000_iksasdbv", "_TZ3000_jtgxgmks", "_TZ3000_jvzvulen", "_TZ3000_ko6v90pg", "_TZ3000_ksw8qtmt", "_TZ3000_kx0pris5", "_TZ3000_mlswgkc3", "_TZ3000_mraovvmm", "_TZ3000_nfnmi125", "_TZ3000_nmsciidq", "_TZ3000_ps3dmato", "_TZ3210_q7oryllx", "_TZ3000_r6buo8ba", "_TZ3000_rdfh8cfs", "_TZ3000_rdtixbnu", "_TZ3000_ss98ec5d", "_TZ3000_typdpbpg", "_TZ3000_u5u4cakc", "_TZ3000_w0qqde0g", "_TZ3000_waho4jtj", "_TZ3000_yujkchbz", "_TZ3000_z1pnpsdo", "_TZ3000_zloso4jk"],
+      "description":    "TUYA TS011F Smart Plug with Power Monitoring (Type A)",
+      "modelNames":     ["_TZ3000_0yxeawjt", "_TZ3000_1h2x4akh", "_TZ3000_5f43h46b", "_TZ3000_7dndcnnb", "_TZ3000_9vo5icau", "_TZ3000_aim0ztek", "_TZ3000_amdymr7l", "_TZ3000_b28wrpvx", "_TZ3000_cehuw1lw", "_TZ3000_cjrngdr3", "_TZ3000_dksbtrzs", "_TZ3000_dpo1ysak", "_TZ3000_ew3ldmgx", "_TZ3000_f1bapcit", "_TZ3000_fgwhjm9j", "_TZ3000_fukaa7nc", "_TZ3000_gjnozsaz", "_TZ3000_gznh2xla", "_TZ3000_gvn91tmx", "_TZ3000_hdopuwv6", "_TZ3000_idrffznf", "_TZ3000_iksasdbv", "_TZ3000_jtgxgmks", "_TZ3000_jvzvulen", "_TZ3000_ko6v90pg", "_TZ3000_ksw8qtmt", "_TZ3000_kx0pris5", "_TZ3000_mlswgkc3", "_TZ3000_mraovvmm", "_TZ3000_nfnmi125", "_TZ3000_nmsciidq", "_TZ3000_ps3dmato", "_TZ3210_q7oryllx", "_TZ3000_r6buo8ba", "_TZ3000_rdfh8cfs", "_TZ3000_rdtixbnu", "_TZ3000_ss98ec5d", "_TZ3000_typdpbpg", "_TZ3000_u5u4cakc", "_TZ3000_w0qqde0g", "_TZ3000_waho4jtj", "_TZ3000_yujkchbz", "_TZ3000_z1pnpsdo", "_TZ3000_zloso4jk"],
       "properties":     ["status", "energy", "voltage", "current", "power", "tuyaChildLock", "tuyaIndicatorMode", "tuyaPowerOnStatus"],
       "actions":        ["status", "tuyaChildLock", "tuyaIndicatorMode", "tuyaPowerOnStatus"],
       "bindings":       ["status", "energy", "power"],
@@ -938,8 +948,8 @@
       "options":        {"switch": "outlet", "powerOnStatus": {"enum": ["off", "on", "previous"]}, "energyDivider": 100, "currentDivider": 1000, "tuyaMagic": true}
     },
     {
-      "description":    "TUYA TS011F Smart Plug with Power Monitoring",
-      "modelNames":     ["_TZ3000_okaz9tjs"],
+      "description":    "TUYA TS011F Smart Plug with Power Monitoring (Type B)",
+      "modelNames":     ["_TZ3000_cphmq0q7", "_TZ3000_okaz9tjs"],
       "properties":     ["status", "energy", "voltage", "current", "power", "tuyaChildLock", "tuyaIndicatorMode", "tuyaPowerOnStatus"],
       "actions":        ["status", "tuyaChildLock", "tuyaIndicatorMode", "tuyaPowerOnStatus"],
       "polls":          ["energy", "voltage", "current", "power"],
@@ -1085,7 +1095,7 @@
     },
     {
       "description":    "TUYA TS0207 Water Leak Sensor",
-      "modelNames":     ["_TZ3000_d16y6col", "_TZ3000_it1hm1cr", "_TZ3000_k4ej3ww2", "_TZ3000_kstbkt6a", "_TZ3000_kyb656no", "_TZ3000_mugyhz0q", "_TZ3000_ocjlo4ea", "_TZ3000_qhozxs2b", "_TYZB01_sqmd19i1", "_TZ3000_upgcbody"],
+      "modelNames":     ["_TZ3000_d16y6col", "_TZ3000_it1hm1cr", "_TZ3000_k4ej3ww2", "_TZ3000_kstbkt6a", "_TZ3000_kyb656no", "_TZ3000_mugyhz0q", "_TZ3000_ocjlo4ea", "_TZ3000_qhozxs2b", "_TYZB01_sqmd19i1", "_TZ3000_t6jriawg", "_TZ3000_upgcbody"],
       "properties":     ["batteryPercentage", "iasWaterLeak"],
       "bindings":       ["battery"],
       "reportings":     ["batteryPercentage"],
