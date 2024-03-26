@@ -253,7 +253,9 @@ void DeviceList::setupDevice(const Device &device)
                     for (int i = 0; i < endpoints.count(); i++)
                         setupEndpoint(endpoint(device, static_cast <quint8> (endpoints.at(i).toInt())), json, endpoinId.type() == QJsonValue::Array);
 
-                    device->setDescription(json.value("description").toString());
+                    if (json.contains("description"))
+                        device->setDescription(json.value("description").toString());
+
                     device->setSupported(true);
                 }
             }
@@ -309,7 +311,7 @@ void DeviceList::setupEndpoint(const Endpoint &endpoint, const QJsonObject &json
             property->setMultiple(multiple);
             property->setTimeout(static_cast <quint32> (timeout.toInt()));
 
-            if (property->timeout() || timeout.toBool())
+            if (timeout.toBool() || property->clusters().contains(CLUSTER_IAS_WD))
                 startTimer = true;
 
             endpoint->properties().append(property);

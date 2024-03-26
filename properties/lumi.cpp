@@ -84,7 +84,7 @@ void PropertiesLUMI::Data::parseData(quint16 dataPoint, const QByteArray &data, 
             if (!list.contains(modelName()))
                 break;
 
-            map.insert("operationMode", enumValue(static_cast <quint8> (data.at(0))));
+            map.insert("operationMode", enumValue("operationMode", static_cast <quint8> (data.at(0))));
             break;
         }
 
@@ -98,13 +98,20 @@ void PropertiesLUMI::Data::parseData(quint16 dataPoint, const QByteArray &data, 
         }
 
         case 0x0066:
+        case 0x010C:
         case 0x0143:
         {
             if (modelName() != "lumi.motion.ac01")
                 break;
 
-            map.insert("event", enumValue(static_cast <quint8> (data.at(0))));
-            map.insert("occupancy", data.at(0) != 0x01 ? true : false);
+            if (dataPoint != 0x0066 ? dataPoint != 0x010C : version() < 50)
+            {
+                map.insert("event", enumValue("event", static_cast <quint8> (data.at(0))));
+                map.insert("occupancy", data.at(0) != 0x01 ? true : false);
+            }
+            else
+                map.insert("sensitivityMode", enumValue("sensitivityMode", static_cast <quint8> (data.at(0))));
+
             break;
         }
 
@@ -114,7 +121,7 @@ void PropertiesLUMI::Data::parseData(quint16 dataPoint, const QByteArray &data, 
             if (modelName() != "lumi.motion.ac01")
                 break;
 
-            map.insert("detectionMode", enumValue(static_cast <quint8> (data.at(0))));
+            map.insert("detectionMode", enumValue("detectionMode", static_cast <quint8> (data.at(0))));
             break;
         }
 
@@ -124,7 +131,7 @@ void PropertiesLUMI::Data::parseData(quint16 dataPoint, const QByteArray &data, 
             if (modelName() != "lumi.motion.ac01")
                 break;
 
-            map.insert("distanceMode", enumValue(static_cast <quint8> (data.at(0))));
+            map.insert("distanceMode", enumValue("distanceMode", static_cast <quint8> (data.at(0))));
             break;
         }
 
@@ -178,16 +185,7 @@ void PropertiesLUMI::Data::parseData(quint16 dataPoint, const QByteArray &data, 
 
         case 0x00F0:
         {
-            map.insert("indicatorMode", enumValue(static_cast <quint8> (data.at(0))));
-            break;
-        }
-
-        case 0x010C:
-        {
-            if (modelName() != "lumi.motion.ac01")
-                break;
-
-            map.insert("sensitivityMode", enumValue(static_cast <quint8> (data.at(0))));
+            map.insert("indicatorMode", enumValue("indicatorMode", static_cast <quint8> (data.at(0))));
             break;
         }
 
@@ -212,7 +210,7 @@ void PropertiesLUMI::Data::parseData(quint16 dataPoint, const QByteArray &data, 
             if (!m_multiple && list.contains(modelName()))
                 break;
 
-            map.insert("switchMode", enumValue(static_cast <quint8> (data.at(0))));
+            map.insert("switchMode", enumValue("switchMode", static_cast <quint8> (data.at(0))));
             break;
         }
 
