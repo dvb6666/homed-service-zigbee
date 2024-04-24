@@ -298,7 +298,7 @@
     },
     {
       "description":    "TUYA TS0601 Neo Siren",
-      "modelNames":     ["_TZE200_t1blo2bj", "_TZE204_t1blo2bj"],
+      "modelNames":     ["_TZE200_t1blo2bj", "_TZE204_q76rtoa9", "_TZE204_t1blo2bj"],
       "properties":     ["tuyaDataPoints"],
       "actions":        ["tuyaDataPoints"],
       "exposes":        ["battery", "alarm", "volumeMode", "duration", "melody"],
@@ -878,7 +878,7 @@
       "endpointId":     [1, 2, 3]
     },
     {
-      "description":    "TUYA TS0004/TS0014 4-Channel Relay",
+      "description":    "TUYA TS0004/TS0014 4-Channel Relay (Type A)",
       "modelNames":     ["_TZ3000_ltt60asa"],
       "properties":     ["tuyaSwitchType", "tuyaPowerOnStatus"],
       "actions":        ["tuyaSwitchType", "tuyaPowerOnStatus"],
@@ -892,6 +892,24 @@
       "actions":        ["status"],
       "bindings":       ["status"],
       "exposes":        ["switch"],
+      "endpointId":     [1, 2, 3, 4]
+    },
+    {
+      "description":    "TUYA TS0004 4-Channel Relay (Type B)",
+      "modelNames":     ["_TZ3000_gexniqbq", "_TZ3000_imaccztn", "_TZ3000_mdj7kra9", "_TZ3000_nivavasg"],
+      "properties":     ["customAttributes"],
+      "actions":        ["customAttributes"],
+      "exposes":        ["indicator"],
+      "options":        {"customAttributes": {"indicator": {"type": "bool", "clusterId": 6, "attributeId": 20480, "dataType": 48, "action": true}}, "tuyaMagic": true},
+      "endpointId":     1
+    },
+    {
+      "modelNames":     ["_TZ3000_gexniqbq", "_TZ3000_imaccztn", "_TZ3000_mdj7kra9", "_TZ3000_nivavasg"],
+      "properties":     ["status", "customAttributes"],
+      "actions":        ["status", "customAttributes"],
+      "bindings":       ["status"],
+      "exposes":        ["switch", "powerOnStatus"],
+      "options":        {"customAttributes": {"powerOnStatus": {"type": "enum", "clusterId": 57345, "attributeId": 53264, "dataType": 48, "action": true}}, "powerOnStatus": {"enum": ["off", "on", "previous"]}},
       "endpointId":     [1, 2, 3, 4]
     },
     {
@@ -1016,6 +1034,14 @@
       "actions":        ["status", "level"],
       "exposes":        ["light"],
       "options":        {"light": ["level"]}
+    },
+    {
+      "description":    "TUYA TS0502B Led Dimmer",
+      "modelNames":     ["TS0502B"],
+      "properties":     ["status", "level", "colorTemperature"],
+      "actions":        ["status", "level", "colorTemperature"],
+      "exposes":        ["light"],
+      "options":        {"light": ["level", "colorTemperature"], "tuyaMagic": true}
     },
     {
       "description":    "TUYA TS0505B RGBW Bulb",
