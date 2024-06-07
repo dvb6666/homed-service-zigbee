@@ -27,6 +27,21 @@
                         }
     },
     {
+      "description":    "Aqara S3 Thermostat ZNWKQ11LM",
+      "modelNames":     ["lumi.airrtc.pcacn2"],
+      "properties":     ["lumiData", "humidity"],
+      "actions":        ["lumiThermostat", "lumiLanguage"],
+      "exposes":        ["thermostat", "fanMode", "humidity", "language"],
+      "options":        {
+                          "targetTemperature": {"min": 16, "max": 32, "step": 0.5},
+                          "systemMode": {"enum": ["off", "heat", "cool", "fan"]},
+                          "fanMode": {"enum": ["low", "medium", "high", "auto"]},
+                          "language": {"type": "select", "enum": ["cn", "en"], "icon": "mdi:translate"},
+                          "runningStatus": true,
+                          "utcTime": true
+                        }
+    },
+    {
       "description":    "Aqara D1 1-Channel Wall Switch QBKG04LM or QBKG21LM",
       "modelNames":     ["lumi.ctrl_neutral1", "lumi.switch.b1lacn02"],
       "options":        {"logicalType": 2}
@@ -313,10 +328,10 @@
     {
       "description":    "Aqara RGBW Led Controller ZNTGMK11LM",
       "modelNames":     ["lumi.light.rgbac1"],
-      "properties":     ["status", "powerOnStatus", "level", "colorXY", "colorTemperature"],
+      "properties":     ["status", "powerOnStatus", "level", "colorXY", "colorTemperature", "colorMode"],
       "actions":        ["status", "powerOnStatus", "level", "colorXY", "colorTemperature"],
       "exposes":        ["light", "powerOnStatus"],
-      "options":        {"light": ["level", "color", "colorTemperature"]}
+      "options":        {"light": ["level", "color", "colorTemperature", "colorMode"]}
     },
     {
       "description":    "Aqara Curtain Motor SRSC-M01 or ZNCLDJ11LM",

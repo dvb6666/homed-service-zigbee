@@ -12,20 +12,16 @@ void PropertyObject::registerMetaTypes(void)
     qRegisterMetaType <Properties::BatteryPercentage>               ("batteryPercentageProperty");
     qRegisterMetaType <Properties::DeviceTemperature>               ("deviceTemperatureProperty");
     qRegisterMetaType <Properties::Status>                          ("statusProperty");
-    qRegisterMetaType <Properties::PowerOnStatus>                   ("powerOnStatusProperty");
-    qRegisterMetaType <Properties::SwitchType>                      ("switchTypeProperty");
-    qRegisterMetaType <Properties::SwitchMode>                      ("switchModeProperty");
     qRegisterMetaType <Properties::Level>                           ("levelProperty");
     qRegisterMetaType <Properties::AnalogInput>                     ("analogInputProperty");
     qRegisterMetaType <Properties::AnalogOutput>                    ("analogOutputProperty");
     qRegisterMetaType <Properties::CoverPosition>                   ("coverPositionProperty");
     qRegisterMetaType <Properties::CoverTilt>                       ("coverTiltProperty");
     qRegisterMetaType <Properties::Thermostat>                      ("thermostatProperty");
-    qRegisterMetaType <Properties::FanMode>                         ("fanModeProperty");
-    qRegisterMetaType <Properties::DisplayMode>                     ("displayModeProperty");
     qRegisterMetaType <Properties::ColorHS>                         ("colorHSProperty");
     qRegisterMetaType <Properties::ColorXY>                         ("colorXYProperty");
     qRegisterMetaType <Properties::ColorTemperature>                ("colorTemperatureProperty");
+    qRegisterMetaType <Properties::ColorMode>                       ("colorModeProperty");
     qRegisterMetaType <Properties::Illuminance>                     ("illuminanceProperty");
     qRegisterMetaType <Properties::Temperature>                     ("temperatureProperty");
     qRegisterMetaType <Properties::Pressure>                        ("pressureProperty");
@@ -39,11 +35,17 @@ void PropertyObject::registerMetaTypes(void)
     qRegisterMetaType <Properties::Voltage>                         ("voltageProperty");
     qRegisterMetaType <Properties::Current>                         ("currentProperty");
     qRegisterMetaType <Properties::Power>                           ("powerProperty");
+    qRegisterMetaType <Properties::ChildLock>                       ("childLockProperty");
     qRegisterMetaType <Properties::Scene>                           ("sceneProperty");
     qRegisterMetaType <Properties::StatusAction>                    ("statusActionProperty");
     qRegisterMetaType <Properties::LevelAction>                     ("levelActionProperty");
     qRegisterMetaType <Properties::CoverAction>                     ("coverActionProperty");
     qRegisterMetaType <Properties::ColorAction>                     ("colorActionProperty");
+    qRegisterMetaType <Properties::PowerOnStatus>                   ("powerOnStatusProperty");
+    qRegisterMetaType <Properties::SwitchType>                      ("switchTypeProperty");
+    qRegisterMetaType <Properties::SwitchMode>                      ("switchModeProperty");
+    qRegisterMetaType <Properties::FanMode>                         ("fanModeProperty");
+    qRegisterMetaType <Properties::DisplayMode>                     ("displayModeProperty");
 
     qRegisterMetaType <PropertiesIAS::Warning>                      ("iasWarningProperty");
     qRegisterMetaType <PropertiesIAS::Contact>                      ("iasContactProperty");
@@ -71,11 +73,11 @@ void PropertyObject::registerMetaTypes(void)
     qRegisterMetaType <PropertiesTUYA::CoverMotor>                  ("tuyaCoverMotorProperty");
     qRegisterMetaType <PropertiesTUYA::CoverSwitch>                 ("tuyaCoverSwitchProperty");
     qRegisterMetaType <PropertiesTUYA::ChildLock>                   ("tuyaChildLockProperty");
+    qRegisterMetaType <PropertiesTUYA::ButtonAction>                ("tuyaButtonActionProperty");
     qRegisterMetaType <PropertiesTUYA::OperationMode>               ("tuyaOperationModeProperty");
     qRegisterMetaType <PropertiesTUYA::IndicatorMode>               ("tuyaIndicatorModeProperty");
     qRegisterMetaType <PropertiesTUYA::SwitchType>                  ("tuyaSwitchTypeProperty");
     qRegisterMetaType <PropertiesTUYA::PowerOnStatus>               ("tuyaPowerOnStatusProperty");
-    qRegisterMetaType <PropertiesTUYA::ButtonAction>                ("tuyaButtonActionProperty");
 
     qRegisterMetaType <PropertiesEfekta::ReportingDelay>            ("efektaReportingDelayProperty");
     qRegisterMetaType <PropertiesEfekta::TemperatureSettings>       ("efektaTemperatureSettingsProperty");
@@ -93,9 +95,9 @@ void PropertyObject::registerMetaTypes(void)
     qRegisterMetaType <PropertiesPTVO::Humidity>                    ("ptvoHumidityProperty");
     qRegisterMetaType <PropertiesPTVO::Count>                       ("ptvoCountProperty");
     qRegisterMetaType <PropertiesPTVO::Pattern>                     ("ptvoPatternProperty");
-    qRegisterMetaType <PropertiesPTVO::ButtonAction>                ("ptvoButtonActionProperty");
     qRegisterMetaType <PropertiesPTVO::SwitchAction>                ("ptvoSwitchActionProperty");
     qRegisterMetaType <PropertiesPTVO::SerialData>                  ("ptvoSerialDataProperty");
+    qRegisterMetaType <PropertiesPTVO::ButtonAction>                ("ptvoButtonActionProperty");
 
     qRegisterMetaType <PropertiesByun::GasSensor>                   ("byunGasSensorProperty");
     qRegisterMetaType <PropertiesByun::SmokeSensor>                 ("byunSmokeSensorProperty");

@@ -144,6 +144,16 @@ namespace Properties
 
     };
 
+    class ColorMode : public PropertyObject
+    {
+
+    public:
+
+        ColorMode(void) :  PropertyObject("colorMode", CLUSTER_COLOR_CONTROL) {}
+        void parseAttribte(quint16 clusterId, quint16 attributeId, const QByteArray &data) override;
+
+    };
+
     class Illuminance : public PropertyObject
     {
 
@@ -271,6 +281,16 @@ namespace Properties
     public:
 
         Power(void) : PropertyObject("power", CLUSTER_ELECTRICAL_MEASUREMENT) {}
+        void parseAttribte(quint16 clusterId, quint16 attributeId, const QByteArray &data) override;
+
+    };
+
+    class ChildLock : public PropertyObject
+    {
+
+    public:
+
+        ChildLock(void) : PropertyObject("childLock", CLUSTER_THERMOSTAT_UI_CONFIGURATION) {}
         void parseAttribte(quint16 clusterId, quint16 attributeId, const QByteArray &data) override;
 
     };

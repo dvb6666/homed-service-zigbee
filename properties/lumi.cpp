@@ -56,7 +56,7 @@ void PropertiesLUMI::Data::parseData(quint16 dataPoint, const QByteArray &data, 
 
         case 0x0003:
         {
-            QList <QString> list = {"lumi.airrtc.agl001", "lumi.remote.b286opcn01", "lumi.remote.b486opcn01", "lumi.remote.b686opcn01", "lumi.sen_ill.mgl01"};
+            QList <QString> list = {"lumi.airrtc.agl001", "lumi.airrtc.pcacn2", "lumi.remote.b286opcn01", "lumi.remote.b486opcn01", "lumi.remote.b686opcn01", "lumi.sen_ill.mgl01"};
 
             if (list.contains(modelName()))
                 break;
@@ -218,6 +218,63 @@ void PropertiesLUMI::Data::parseData(quint16 dataPoint, const QByteArray &data, 
         case 0xFF19:
         {
             map.insert("statusMemory", data.at(0) ? true : false);
+            break;
+        }
+
+        case 0x0210:
+        {
+            map.insert("language", enumValue("language", static_cast <quint8> (data.at(0))));
+            break;
+        }
+
+        case 0x024A:
+        {
+            map.insert("running", data.at(0) ? true : false);
+            break;
+        }
+
+        case 0x024E:
+        {
+            map.insert("floor", data.at(0) == 0x03 ? true : false);
+            break;
+        }
+
+        case 0x024F:
+        {
+            qint64 buffer = 0;
+            quint16 value = 0;
+
+            memcpy(&buffer, data.constData(), sizeof(buffer));
+            buffer = qFromLittleEndian(buffer);
+
+            if ((value = static_cast <quint16> (buffer >> 48)) != 0xFFFF)
+                map.insert("targetTemperature", value / 100.0);
+
+            if ((value = static_cast <quint16> (buffer >> 32)) != 0xFFFF)
+                map.insert("temperature", value / 100.0);
+
+            if ((value = static_cast <quint8> (buffer >> 20) & 0x0F) != 0x0F)
+                map.insert("fanMode", enumValue("fanMode", value));
+
+            value = static_cast <quint8> (buffer >> 24) & 0xFF;
+
+            if (!(value & 0x10))
+            {
+                 map.insert("systemMode", "off");
+                 break;
+            }
+
+            switch (value & 0x0F)
+            {
+                case 0x00: map.insert("operationMode", "heat"); break;
+                case 0x01: map.insert("operationMode", "cool"); break;
+                case 0x04: map.insert("operationMode", "fan"); break;
+                case 0x08: map.insert("operationMode", "heat"); break;
+            }
+
+            if (map.contains("operationMode"))
+                map.insert("systemMode", map.value("operationMode"));
+
             break;
         }
 

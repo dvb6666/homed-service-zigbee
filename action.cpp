@@ -9,33 +9,36 @@
 void ActionObject::registerMetaTypes(void)
 {
     qRegisterMetaType <Actions::Status>                         ("statusAction");
-    qRegisterMetaType <Actions::PowerOnStatus>                  ("powerOnStatusAction");
-    qRegisterMetaType <Actions::SwitchType>                     ("switchTypeAction");
-    qRegisterMetaType <Actions::SwitchMode>                     ("switchModeAction");
     qRegisterMetaType <Actions::Level>                          ("levelAction");
     qRegisterMetaType <Actions::AnalogOutput>                   ("analogOutputAction");
     qRegisterMetaType <Actions::CoverStatus>                    ("coverStatusAction");
     qRegisterMetaType <Actions::CoverPosition>                  ("coverPositionAction");
     qRegisterMetaType <Actions::CoverTilt>                      ("coverTiltAction");
     qRegisterMetaType <Actions::Thermostat>                     ("thermostatAction");
-    qRegisterMetaType <Actions::FanMode>                        ("fanModeAction");
-    qRegisterMetaType <Actions::DisplayMode>                    ("displayModeAction");
     qRegisterMetaType <Actions::ColorHS>                        ("colorHSAction");
     qRegisterMetaType <Actions::ColorXY>                        ("colorXYAction");
     qRegisterMetaType <Actions::ColorTemperature>               ("colorTemperatureAction");
     qRegisterMetaType <Actions::OccupancyTimeout>               ("occupancyTimeoutAction");
+    qRegisterMetaType <Actions::ChildLock>                      ("childLockAction");
+    qRegisterMetaType <Actions::PowerOnStatus>                  ("powerOnStatusAction");
+    qRegisterMetaType <Actions::SwitchType>                     ("switchTypeAction");
+    qRegisterMetaType <Actions::SwitchMode>                     ("switchModeAction");
+    qRegisterMetaType <Actions::FanMode>                        ("fanModeAction");
+    qRegisterMetaType <Actions::DisplayMode>                    ("displayModeAction");
 
     qRegisterMetaType <ActionsIAS::Warning>                     ("iasWarningAction");
 
     qRegisterMetaType <ActionsLUMI::PresenceSensor>             ("lumiPresenceSensorAction");
+    qRegisterMetaType <ActionsLUMI::Thermostat>                 ("lumiThermostatAction");
     qRegisterMetaType <ActionsLUMI::ButtonMode>                 ("lumiButtonModeAction");
-    qRegisterMetaType <ActionsLUMI::OperationMode>              ("lumiOperationModeAction");
-    qRegisterMetaType <ActionsLUMI::IndicatorMode>              ("lumiIndicatorModeAction");
-    qRegisterMetaType <ActionsLUMI::SwitchMode>                 ("lumiSwitchModeAction");
     qRegisterMetaType <ActionsLUMI::SwitchStatusMemory>         ("lumiSwitchStatusMemoryAction");
     qRegisterMetaType <ActionsLUMI::LightStatusMemory>          ("lumiLightStatusMemoryAction");
     qRegisterMetaType <ActionsLUMI::CoverPosition>              ("lumiCoverPositionAction");
     qRegisterMetaType <ActionsLUMI::VibrationSensitivity>       ("lumiVibrationSensitivityAction");
+    qRegisterMetaType <ActionsLUMI::OperationMode>              ("lumiOperationModeAction");
+    qRegisterMetaType <ActionsLUMI::IndicatorMode>              ("lumiIndicatorModeAction");
+    qRegisterMetaType <ActionsLUMI::SwitchMode>                 ("lumiSwitchModeAction");
+    qRegisterMetaType <ActionsLUMI::Language>                   ("lumiLanguageAction");
 
     qRegisterMetaType <ActionsTUYA::DataPoints>                 ("tuyaDataPointsAction");
     qRegisterMetaType <ActionsTUYA::HolidayThermostatProgram>   ("tuyaHolidayThermostatProgramAction");
