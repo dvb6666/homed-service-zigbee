@@ -51,8 +51,7 @@
                             "19":   [{"name": "power", "type": "value", "divider": 10}],
                             "20":   [{"name": "voltage", "type": "value", "divider": 10}],
                             "101":  [{"name": "energy", "type": "value", "divider": 1000}]
-                          },
-                          "tuyaMagic": true
+                          }
                         }
     },
     {
@@ -86,6 +85,22 @@
                         }
     },
     {
+      "description":    "TUYA TS0601 3-Phase Electricity Meter",
+      "modelNames":     ["_TZE200_ves1ycwx", "_TZE204_ves1ycwx"],
+      "properties":     ["tuyaDataPoints"],
+      "actions":        ["tuyaDataPoints"],
+      "exposes":        ["energy", "voltage_1", "current_1", "power_1", "voltage_2", "current_2", "power_2", "voltage_3", "current_3", "power_3"],
+      "options":        {
+                          "tuyaDataPoints":
+                          {
+                            "1":    [{"name": "energy", "type": "value", "divider": 100}],
+                            "6":    [{"name": "elictricity_1", "type": "raw"}],
+                            "7":    [{"name": "elictricity_2", "type": "raw"}],
+                            "8":    [{"name": "elictricity_3", "type": "raw"}]
+                          }
+                        }
+    },
+    {
       "description":    "TUYA TS0601 1-Channel Dimmer",
       "modelNames":     ["_TZE200_1agwnems", "_TZE200_3p5ydos3", "_TZE200_4mh6tyyo", "_TZE200_579lguh2", "_TZE200_9i9dt8is", "_TZE200_dfxkcots", "_TZE200_w4cryh2i", "_TZE200_ip2akl4w", "_TZE200_la2c2uo9", "_TZE200_p0gzbqct", "_TZE200_vucankjx"],
       "properties":     ["tuyaDataPoints"],
@@ -96,10 +111,39 @@
                           {
                             "1":    [{"name": "status", "type": "bool", "action": true}],
                             "2":    [{"name": "level", "type": "value", "divider": 3.937007874015748, "round": true, "action": true}],
-                            "4":    [{"name": "lightType", "type": "enum", "action": true}]
+                            "4":    [{"name": "lightType", "type": "enum", "action": true}],
+                            "14":   [{"name": "powerOnStatus", "type": "enum", "action": true}]
                           },
                           "status": {"enum": ["off", "on"]},
                           "light": ["level"],
+                          "powerOnStatus": {"enum": ["off", "on", "previous"]},
+                          "tuyaMagic": true
+                        }
+    },
+    {
+      "description":    "TUYA TS0601 2-Channel Dimmer",
+      "modelNames":     ["_TZE204_bxoo2swd", "_TZE200_tsxpl0d0"],
+      "properties":     ["tuyaDataPoints"],
+      "actions":        ["tuyaDataPoints"],
+      "exposes":        ["light_1", "lightType_1", "light_2", "lightType_2", "powerOnStatus"],
+      "options":        {
+                          "tuyaDataPoints":
+                          {
+                            "1":    [{"name": "status_1", "type": "bool", "action": true}],
+                            "2":    [{"name": "level_1", "type": "value", "divider": 3.937007874015748, "round": true, "action": true}],
+                            "4":    [{"name": "lightType_1", "type": "enum", "action": true}],
+                            "7":    [{"name": "status_2", "type": "bool", "action": true}],
+                            "8":    [{"name": "level_2", "type": "value", "divider": 3.937007874015748, "round": true, "action": true}],
+                            "10":   [{"name": "lightType_2", "type": "enum", "action": true}],
+                            "14":   [{"name": "powerOnStatus", "type": "enum", "action": true}]
+                          },
+                          "status_1": {"enum": ["off", "on"]},
+                          "status_2": {"enum": ["off", "on"]},
+                          "light_1": ["level"],
+                          "light_2": ["level"],
+                          "lightType_1": {"type": "select", "enum": ["led", "incandescent", "halogen"], "icon": "mdi:lightbulb-on"},
+                          "lightType_2": {"type": "select", "enum": ["led", "incandescent", "halogen"], "icon": "mdi:lightbulb-on"},
+                          "powerOnStatus": {"enum": ["off", "on", "previous"]},
                           "tuyaMagic": true
                         }
     },
@@ -224,6 +268,7 @@
                           "operationMode": {"enum": ["program", "manual", "temporary", "holiday"]},
                           "targetTemperature": {"min": 10, "max": 30},
                           "boostTimeout": {"min": 60, "max": 900, "step": 10},
+                          "position": {"type": "sensor", "icon": "mdi:valve"},
                           "temperatureOffset": {"min": -9, "max": 9},
                           "ecoTemperature": {"min": 10, "max": 30},
                           "thermostatProgram": "moes",
@@ -314,7 +359,7 @@
                         }
     },
     {
-      "description":    "TUYA TS0601 Neo Siren",
+      "description":    "TUYA TS0601 Siren (Type A)",
       "modelNames":     ["_TZE200_t1blo2bj", "_TZE204_q76rtoa9", "_TZE204_t1blo2bj"],
       "properties":     ["tuyaDataPoints"],
       "actions":        ["tuyaDataPoints"],
@@ -330,8 +375,33 @@
                           },
                           "duration": {"min": 0, "max": 1800},
                           "alarm": {"type": "toggle", "control": true, "icon": "mdi:bell"},
-                          "melody": {"min": 1, "max": 18},
+                          "melody": {"min": 0, "max": 17},
                           "tuyaDataQuery": true
+                        }
+    },
+    {
+      "description":    "TUYA TS0601 Siren (Type B)",
+      "modelNames":     ["_TZE204_fncxk3ob", "_TZE204_k7mfgaen"],
+      "properties":     ["tuyaDataPoints"],
+      "actions":        ["tuyaDataPoints"],
+      "exposes":        ["battery", "batteryStatus", "powerMode", "alarm", "volumeMode", "duration", "melody"],
+      "options":        {
+                          "tuyaDataPoints":
+                          {
+                            "5":    [{"name": "volumeMode", "type": "enum", "action": true}],
+                            "6":    [{"name": "powerMode", "type": "enum"}],
+                            "7":    [{"name": "duration", "type": "value", "action": true}],
+                            "13":   [{"name": "alarm", "type": "bool", "action": true}],
+                            "14":   [{"name": "batteryStatus", "type": "enum"}],
+                            "15":   [{"name": "battery", "type": "value"}],
+                            "21":   [{"name": "melody", "type": "enum", "offset": -1, "action": true}]
+                          },
+                          "volumeMode": {"enum": ["low", "medium", "high", "mute"]},
+                          "powerMode": {"type": "sensor", "enum": ["normal", "backup"], "icon": "mdi:power-plug-battery"},
+                          "duration": {"min": 1, "max": 60, "unit": "min"},
+                          "alarm": {"type": "toggle", "control": true, "icon": "mdi:bell"},
+                          "batteryStatus": {"enum": ["low", "medium", "high"]},
+                          "melody": {"min": 0, "max": 12}
                         }
     },
     {
@@ -663,12 +733,30 @@
                             "14":   [{"name": "temperatureAlarm", "type": "enum"}],
                             "15":   [{"name": "humidityAlarm", "type": "enum"}]
                           },
-                          "temperatureHigh":           {"min": -20, "max": 60},
-                          "temperatureLow":            {"min": -20, "max": 60},
-                          "humidityHigh":              {"min": 0, "max": 100},
-                          "humidityLow":               {"min": 0, "max": 100},
-                          "temperatureAlarm":          {"enum": ["low", "high", "none"]},
-                          "humidityAlarm":             {"enum": ["low", "high", "none"]}
+                          "temperatureHigh": {"min": -20, "max": 60},
+                          "temperatureLow": {"min": -20, "max": 60},
+                          "humidityHigh": {"min": 0, "max": 100},
+                          "humidityLow": {"min": 0, "max": 100},
+                          "temperatureAlarm": {"enum": ["low", "high", "none"]},
+                          "humidityAlarm": {"enum": ["low", "high", "none"]},
+                          "tuyaDataQuery": true
+                        }
+    },
+    {
+      "description":    "TUYA TS0601 Soil Moisture Sensor",
+      "modelNames":     ["_TZE284_g2e6cpnw"],
+      "properties":     ["tuyaDataPoints"],
+      "exposes":        ["battery", "batteryStatus", "temperature", "moisture"],
+      "options":        {
+                          "tuyaDataPoints":
+                          {
+                            "3":    [{"name": "moisture", "type": "value"}],
+                            "5":    [{"name": "temperature", "type": "value", "divider": 10}],
+                            "102":  [{"name": "batteryStatus", "type": "enum"}],
+                            "110":  [{"name": "battery", "type": "value", "divider": 10}]
+                          },
+                          "batteryStatus": {"enum": ["low", "medium", "high"]},
+                          "tuyaMagic": true
                         }
     },
     {
@@ -819,6 +907,10 @@
                           "speed": {"min": 1, "max": 255},
                           "cover": "blind"
                         }
+    },
+    {
+      "description":    "TUYA TS0207 Network Router",
+      "modelNames":     ["_TZ3000_5k5vh43t", "_TZ3000_gszjt2xx", "_TZ3000_m0vaazab", "_TZ3000_misw04hq", "_TZ3000_nkkl7uzv", "_TZ3000_nlsszmzl", "_TZ3000_ufttklsz", "_TZ3000_wlquqiiz"]
     },
     {
       "description":    "TUYA TS0001/TS0011 1-Channel Relay",
@@ -973,6 +1065,39 @@
       "actions":        ["status"],
       "bindings":       ["status"],
       "exposes":        ["switch"],
+      "endpointId":     [1, 2, 3, 4, 5, 6]
+    },
+    {
+      "description":    "TUYA TS0726 MOES 3-Channel Switch SR-ZS",
+      "modelNames":     ["_TZ3002_vaq2bfcu"],
+      "properties":     ["tuyaIndicatorMode"],
+      "actions":        ["tuyaIndicatorMode"],
+      "exposes":        ["indicatorMode"],
+      "options":        {"tuyaMagic": true},
+      "endpointId":     1
+    },
+    {
+      "modelNames":     ["_TZ3002_vaq2bfcu"],
+      "properties":     ["status", "customAttributes"],
+      "actions":        ["status", "customAttributes"],
+      "bindings":       ["status"],
+      "exposes":        ["switch", "powerOnStatus", "switchMode"],
+      "options":        {
+                          "customAttributes":
+                          {
+                            "powerOnStatus":  {"type": "enum", "clusterId": 57345, "attributeId": 53264, "dataType": 48, "action": true},
+                            "switchMode":     {"type": "enum", "clusterId": 57345, "attributeId": 53280, "dataType": 48, "action": true}
+                          },
+                          "powerOnStatus": {"enum": ["off", "on", "previous"]},
+                          "switchMode": {"enum": ["relay", "decoupled"]}
+                        },
+      "endpointId":     [1, 2, 3]
+    },
+    {
+      "modelNames":     ["_TZ3002_vaq2bfcu"],
+      "properties":     ["tuyaButtonAction"],
+      "exposes":        ["action"],
+      "options":        {"action": {"enum": ["singleClick"]}},
       "endpointId":     [1, 2, 3, 4, 5, 6]
     },
     {
@@ -1133,7 +1258,8 @@
       "properties":     ["batteryPercentage", "iasOccupancy"],
       "bindings":       ["battery"],
       "reportings":     ["batteryPercentage"],
-      "exposes":        ["battery", "occupancy", "batteryLow", "tamper"]
+      "exposes":        ["battery", "occupancy", "batteryLow", "tamper"],
+      "options":        {"tuyaMagic": true}
     },
     {
       "description":    "TUYA TS0202 Motion Sensor with Timeout",
@@ -1158,7 +1284,8 @@
                             "sensitivityMode":  {"type": "enum", "clusterId": 1280, "attributeId": 19,    "dataType": 32, "action": true},
                             "timeoutMode":      {"type": "enum", "clusterId": 1280, "attributeId": 61441, "dataType": 32, "action": true}
                           },
-                          "timeoutMode": {"enum": ["30s", "60s", "120s"]}
+                          "timeoutMode": {"enum": ["30s", "60s", "120s"]},
+                          "tuyaMagic": true
                         }
     },
     {
@@ -1296,6 +1423,22 @@
       "exposes":        ["action"],
       "options":        {"action": {"enum": ["singleClick", "doubleClick", "hold"]}},
       "endpointId":     [1, 2, 3, 4]
+    },
+    {
+      "description":    "TUYA TS1201 IR Remote Control",
+      "modelNames":     ["_TZ3290_7v1k4vufotpowp9z", "_TZ3290_acv1iuslxi3shaaj", "_TZ3290_gnl5a6a5xvql7c2a", "_TZ3290_rlkmy85q4pzoxobl"],
+      "properties":     ["tuyaIRCode"],
+      "actions":        ["tuyaIRCode", "tuyaIRLearn"],
+      "exposes":        ["irCode"]
+    },
+    {
+      "description":    "TUYA TS1201 Wireless IR Remote Control",
+      "modelNames":     ["_TZ3290_j37rooaxrcdcqo5n", "_TZ3290_ot6ewjvmejq5ekhl", "_TZ3290_xjpbcxn92aaxvmlz"],
+      "properties":     ["batteryPercentage", "tuyaIRCode"],
+      "actions":        ["tuyaIRCode", "tuyaIRLearn"],
+      "bindings":       ["battery"],
+      "reportings":     ["batteryPercentage"],
+      "exposes":        ["irCode", "battery"]
     },
     {
       "description":    "MIBOXER FUT089Z 8-Group Remote Control",

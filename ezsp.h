@@ -45,23 +45,20 @@
 #define EZSP_FRAME_ADD_TRANSIENT_LINK_KEY                   0x00AF
 #define EZSP_FRAME_CLEAR_KEY_TABLE                          0x00B1
 #define EZSP_FRAME_SET_CHANNEL                              0x00B9
+#define EZSP_FRAME_IMPORT_TRANSIENT_KEY                     0x0111
+#define EZSP_FRAME_EXPORT_KEY                               0x0114
 
 #define EZSP_CONFIG_PACKET_BUFFER_COUNT                     0x01
-#define EZSP_CONFIG_NEIGHBOR_TABLE_SIZE                     0x02
-#define EZSP_CONFIG_APS_UNICAST_MESSAGE_COUNT               0x03
-#define EZSP_CONFIG_BINDING_TABLE_SIZE                      0x04
 #define EZSP_CONFIG_STACK_PROFILE                           0x0C
 #define EZSP_CONFIG_SECURITY_LEVEL                          0x0D
-#define EZSP_CONFIG_MAX_HOPS                                0x10
-#define EZSP_CONFIG_MAX_END_DEVICE_CHILDREN                 0x11
 #define EZSP_CONFIG_INDIRECT_TRANSMISSION_TIMEOUT           0x12
 #define EZSP_CONFIG_END_DEVICE_POLL_TIMEOUT                 0x13
-#define EZSP_CONFIG_TX_POWER_MODE                           0x17
 #define EZSP_CONFIG_TRUST_CENTER_ADDRESS_CACHE_SIZE         0x19
-#define EZSP_CONFIG_KEY_TABLE_SIZE                          0x1E
-#define EZSP_CONFIG_BROADCAST_TABLE_SIZE                    0x2B
+#define EZSP_CONFIG_FRAGMENT_WINDOW_SIZE                    0x1C
+#define EZSP_CONFIG_FRAGMENT_DELAY_MS                       0x1D
+#define EZSP_CONFIG_PAN_ID_CONFLICT_REPORT_THRESHOLD        0x22
 #define EZSP_CONFIG_RETRY_QUEUE_SIZE                        0x34
-#define EZSP_CONFIG_TRANSIENT_KEY_TIMEOUT_S                 0x36
+#define EZSP_CONFIG_TC_REJOINS_WELL_KNOWN_KEY_TIMEOUT_S     0x38
 
 #define EZSP_POLICY_TRUST_CENTER                            0x00
 #define EZSP_POLICY_BINDING_MODIFICATION_POLICY             0x01
@@ -77,6 +74,7 @@
 #define EZSP_VALUE_MAXIMUM_OUTGOING_TRANSFER_SIZE           0x06
 #define EZSP_VALUE_STACK_TOKEN_WRITING                      0x07
 #define EZSP_VALUE_VERSION_INFO                             0x11
+#define EZSP_VALUE_CCA_THRESHOLD                            0x15
 #define EZSP_VALUE_END_DEVICE_KEEP_ALIVE_SUPPORT_MODE       0x3F
 #define EZSP_VALUE_TRANSIENT_DEVICE_TIMEOUT                 0x43
 
@@ -99,7 +97,6 @@
 #define EZSP_APS_OPTION_ENABLE_ADDRESS_DISCOVERY            0x1000
 
 #define EZSP_NETWORK_STATUS_JOINED                          0x02
-#define EZSP_CURRENT_NETWORK_KEY                            0x03
 
 #include "adapter.h"
 

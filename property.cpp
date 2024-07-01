@@ -62,6 +62,7 @@ void PropertyObject::registerMetaTypes(void)
     qRegisterMetaType <PropertiesLUMI::Cover>                       ("lumiCoverProperty");
     qRegisterMetaType <PropertiesLUMI::ButtonAction>                ("lumiButtonActionProperty");
     qRegisterMetaType <PropertiesLUMI::SwitchAction>                ("lumiSwitchActionProperty");
+    qRegisterMetaType <PropertiesLUMI::DimmerAction>                ("lumiDimmerActionProperty");
     qRegisterMetaType <PropertiesLUMI::CubeRotation>                ("lumiCubeRotationProperty");
     qRegisterMetaType <PropertiesLUMI::CubeMovement>                ("lumiCubeMovementProperty");
     qRegisterMetaType <PropertiesLUMI::Vibration>                   ("lumiVibrationProperty");
@@ -74,6 +75,7 @@ void PropertyObject::registerMetaTypes(void)
     qRegisterMetaType <PropertiesTUYA::CoverSwitch>                 ("tuyaCoverSwitchProperty");
     qRegisterMetaType <PropertiesTUYA::ChildLock>                   ("tuyaChildLockProperty");
     qRegisterMetaType <PropertiesTUYA::ButtonAction>                ("tuyaButtonActionProperty");
+    qRegisterMetaType <PropertiesTUYA::IRCode>                      ("tuyaIRCodeProperty");
     qRegisterMetaType <PropertiesTUYA::OperationMode>               ("tuyaOperationModeProperty");
     qRegisterMetaType <PropertiesTUYA::IndicatorMode>               ("tuyaIndicatorModeProperty");
     qRegisterMetaType <PropertiesTUYA::SwitchType>                  ("tuyaSwitchTypeProperty");

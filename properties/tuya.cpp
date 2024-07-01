@@ -74,23 +74,25 @@ void PropertiesTUYA::DataPoints::update(quint8 dataPoint, const QVariant &data)
         {
             case 0: // raw
             {
-                QList <QString> list = {"_TZE200_bcusnqt8", "_TZE200_lsanae15", "_TZE204_lsanae15"};
+                QList <QString> modelList = {"_TZE200_bcusnqt8", "_TZE200_lsanae15", "_TZE200_ves1ycwx", "_TZE204_lsanae15", "_TZE204_ves1ycwx"}, nameList = name.split('_');
                 QByteArray payload = data.toByteArray();
                 quint16 value = 0;
 
-                if (name != "elictricity")
+                if (nameList.value(0) != "elictricity")
                     break;
 
-                if (list.contains(manufacturerName()))
+                if (modelList.contains(manufacturerName()))
                 {
+                    quint8 id = static_cast <quint8> (nameList.value(1).toInt());
+
                     memcpy(&value, payload.constData(), sizeof(value));
-                    map.insert("voltage", qFromBigEndian(value) / 10.0);
+                    map.insert(id ? QString("voltage_%1").arg(id) : "voltage", qFromBigEndian(value) / 10.0);
 
                     memcpy(&value, payload.constData() + 3, sizeof(value));
-                    map.insert("current", qFromBigEndian(value) / 1000.0);
+                    map.insert(id ? QString("current_%1").arg(id) : "current", qFromBigEndian(value) / 1000.0);
 
                     memcpy(&value, payload.constData() + 6, sizeof(value));
-                    map.insert("power", qFromBigEndian(value));
+                    map.insert(id ? QString("power_%1").arg(id) : "power", qFromBigEndian(value));
                 }
                 else
                 {
@@ -304,5 +306,80 @@ void PropertiesTUYA::ButtonAction::parseCommand(quint16, quint8 commandId, const
             }
 
             break;
+    }
+}
+
+void PropertiesTUYA::IRCode::parseCommand(quint16, quint8 commandId, const QByteArray &payload)
+{
+    switch (commandId)
+    {
+        case 0x00:
+        {
+            if (payload.length() < 16)
+                break;
+
+            memcpy(&m_length, payload.constData() + 2, sizeof(m_length));
+            m_length = qFromLittleEndian(m_length);
+            m_buffer.clear();
+
+            m_queue.enqueue({CLUSTER_TUYA_IR_DATA, zclHeader(FC_CLUSTER_SPECIFIC, m_transactionId, 0x01).append(1, 0x00).append(payload)});
+            m_queue.enqueue({CLUSTER_TUYA_IR_DATA, zclHeader(FC_CLUSTER_SPECIFIC, m_transactionId, 0x02).append(payload.mid(0, 2)).append(4, 0x00).append(0x38)});
+            break;
+        }
+
+        case 0x02:
+        {
+            quint32 position;
+            quint8 size, crc = 0;
+            QByteArray data;
+
+            if (payload.length() < 7)
+                break;
+
+            memcpy(&position, payload.constData() + 2, sizeof(position));
+            position = qFromLittleEndian(position);
+            size = static_cast <quint8> (payload.at(payload.length() - 1));
+            data = meta().value("message").toByteArray().mid(position, size);
+
+            for (int i = 0; i < data.length(); i++)
+                crc += data.at(i);
+
+            m_queue.enqueue({CLUSTER_TUYA_IR_DATA, zclHeader(FC_CLUSTER_SPECIFIC, m_transactionId, 0x03).append(1, 0x00).append(payload.mid(0, 6)).append(static_cast <char> (data.length())).append(data).append(static_cast <char> (crc))});
+            break;
+        }
+
+        case 0x03:
+        {
+            quint32 position;
+            quint8 crc = 0;
+            QByteArray data = payload.mid(8, payload.at(7));
+
+            for (int i = 0; i < data.length(); i++)
+                crc += data.at(i);
+
+            if (crc != static_cast <quint8> (payload.at(payload.length() - 1)))
+                break;
+
+            memcpy(&position, payload.constData() + 3, sizeof(position));
+            position = qFromLittleEndian(position) + data.length();
+            m_buffer.append(data);
+
+            if (position >= m_length)
+            {
+                m_queue.enqueue({CLUSTER_TUYA_IR_DATA, zclHeader(FC_CLUSTER_SPECIFIC, m_transactionId, 0x04).append(1, 0x00).append(payload.mid(1, 2)).append(2, 0x00)});
+                break;
+            }
+
+            position = qToLittleEndian(position);
+            m_queue.enqueue({CLUSTER_TUYA_IR_DATA, zclHeader(FC_CLUSTER_SPECIFIC, m_transactionId, 0x02).append(payload.mid(1, 2)).append(reinterpret_cast <char*> (&position), sizeof(position)).append(0x38)});
+            break;
+        }
+
+        case 0x05:
+        {
+            m_queue.enqueue({CLUSTER_TUYA_IR_CONTROL, zclHeader(FC_CLUSTER_SPECIFIC, m_transactionId, 0x00).append(QJsonDocument(QJsonObject {{"study", 1}}).toJson(QJsonDocument::Compact))});
+            m_value = m_buffer.toBase64();
+            break;
+        }
     }
 }
