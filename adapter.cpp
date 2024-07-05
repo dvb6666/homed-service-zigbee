@@ -50,6 +50,8 @@ Adapter::Adapter(QSettings *config, QObject *parent) : QObject(parent), m_receiv
     m_portDebug = config->value("debug/port", false).toBool();
     m_adapterDebug = config->value("debug/adapter", false).toBool();
 
+    m_networkKey = QByteArray::fromHex(config->value("security/key", "000102030405060708090a0b0c0d0e0f").toString().remove("0x").toUtf8());
+
     if (m_channel < 11 || m_channel > 26)
         m_channel = 11;
 
@@ -208,7 +210,7 @@ bool Adapter::bindRequest(quint8 id, quint16 networkAddress, quint8 endpointId, 
     if (request.dstAddressMode != ADDRESS_MODE_GROUP)
         dstAddress = qToLittleEndian(qFromBigEndian(dstAddress));
 
-    return unicastRequest(id, networkAddress, 0x00, 0x00, unbind ? ZDO_UNBIND_REQUEST : ZDO_BIND_REQUEST, QByteArray(1, static_cast <char> (id)).append(reinterpret_cast <char*> (&request), sizeof(request)).append(reinterpret_cast <char*> (&dstAddress), request.dstAddressMode == ADDRESS_MODE_GROUP ? 2 : 8).append(static_cast <char> (dstEndpointId ? dstEndpointId : 1)));
+    return unicastRequest(id, networkAddress, 0x00, 0x00, unbind ? ZDO_UNBIND_REQUEST : ZDO_BIND_REQUEST, QByteArray(1, static_cast <char> (id)).append(reinterpret_cast <char*> (&request), sizeof(request)).append(reinterpret_cast <char*> (&dstAddress), request.dstAddressMode == ADDRESS_MODE_GROUP ? 2 : 8).append(static_cast <char> (dstEndpointId ? dstEndpointId : 0x01)));
 }
 
 bool Adapter::leaveRequest(quint8 id, quint16 networkAddress)

@@ -8,8 +8,8 @@ ZStack::ZStack(QSettings *config, QObject *parent) : Adapter(config, parent), m_
     quint32 channelList = qToLittleEndian <quint32> (1 << m_channel);
 
     m_nvItems.insert(ZCD_NV_MARKER,            QByteArray(1, ZSTACK_CONFIGURATION_MARKER));
-    m_nvItems.insert(ZCD_NV_PRECFGKEY,         QByteArray::fromHex(config->value("security/key", "000102030405060708090a0b0c0d0e0f").toString().remove("0x").toUtf8()));
-    m_nvItems.insert(ZCD_NV_PRECFGKEYS_ENABLE, QByteArray(1, config->value("security/enabled", false).toBool() ? 0x01 : 0x00));
+    m_nvItems.insert(ZCD_NV_PRECFGKEY,         m_networkKey);
+    m_nvItems.insert(ZCD_NV_PRECFGKEYS_ENABLE, QByteArray(1, 0x01));
     m_nvItems.insert(ZCD_NV_PANID,             QByteArray(reinterpret_cast <char*> (&m_panId), sizeof(m_panId)));
     m_nvItems.insert(ZCD_NV_CHANLIST,          QByteArray(reinterpret_cast <char*> (&channelList), sizeof(channelList)));
     m_nvItems.insert(ZCD_NV_LOGICAL_TYPE,      QByteArray(1, 0x00));
@@ -248,8 +248,12 @@ void ZStack::parsePacket(quint16 command, const QByteArray &data)
         }
 
         default:
-            logWarning << "Unrecognized Z-Stack command" << QString::asprintf("0x%04x", command) << "with data" << (data.isEmpty() ? "(empty)" : data.toHex(':'));
+        {
+            if (m_adapterDebug)
+                logWarning << "Unrecognized Z-Stack command" << QString::asprintf("0x%04x", command) << "with data" << (data.isEmpty() ? "(empty)" : data.toHex(':'));
+
             break;
+        }
     }
 }
 
@@ -405,7 +409,8 @@ bool ZStack::startCoordinator(void)
             return false;
         }
 
-        logInfo << "Adapter configuration cleared";
+        logInfo << "Starting new network...";
+        m_clear = false;
 
         for (auto it = m_nvItems.begin(); it != m_nvItems.end(); it++)
         {
@@ -550,14 +555,14 @@ void ZStack::parseData(QByteArray &buffer)
             break;
 
         if (m_portDebug)
-            logInfo << "Packet received:" << buffer.mid(0, length + 5).toHex(':');
+            logInfo << "Frame received:" << buffer.mid(0, length + 5).toHex(':');
 
         for (quint8 i = 1; i < length + 4; i++)
             fcs ^= buffer.at(i);
 
         if (fcs != static_cast <quint8> (buffer.at(length + 4)))
         {
-            logWarning << "Packet" << buffer.mid(0, length + 5).toHex(':') << "FCS mismatch";
+            logWarning << "Frame" << buffer.mid(0, length + 5).toHex(':') << "FCS mismatch";
             buffer.clear();
             break;
         }
@@ -571,8 +576,8 @@ bool ZStack::permitJoin(bool enabled)
 {
     zstackPermitJoinStruct request;
 
-    request.mode = ZSTACK_PERMIT_JOIN_MODE_ADDREESS;
-    request.dstAddress = qToLittleEndian <quint16> (ZSTACK_PERMIT_JOIN_BROARCAST_ADDRESS);
+    request.mode = 0x0F;
+    request.dstAddress = qToLittleEndian <quint16> (PERMIT_JOIN_BROARCAST_ADDRESS);
     request.duration = enabled ? 0xF0 : 0x00;
     request.significance = 0x00;
 

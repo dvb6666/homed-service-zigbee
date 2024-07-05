@@ -2,7 +2,9 @@
 #define ADAPTER_H
 
 #define RECEIVE_TIMEOUT                 20
+
 #define PERMIT_JOIN_TIMEOUT             60000
+#define PERMIT_JOIN_BROARCAST_ADDRESS   0xFFFC
 
 #define RESET_TIMEOUT                   15000
 #define RESET_DELAY                     100
@@ -206,7 +208,7 @@ protected:
     bool m_write, m_portDebug, m_adapterDebug;
 
     QString m_manufacturerName, m_modelName, m_firmware;
-    QByteArray m_ieeeAddress, m_defaultKey;
+    QByteArray m_networkKey, m_defaultKey, m_ieeeAddress;
 
     quint8 m_replyStatus;
     bool m_permitJoin;
@@ -227,11 +229,13 @@ private:
     virtual void parseData(QByteArray &buffer) = 0;
     virtual bool permitJoin(bool enabled) = 0;
 
-private slots:
+protected slots:
 
     virtual void handleQueue(void) = 0;
+    virtual void serialError(QSerialPort::SerialPortError error);
 
-    void serialError(QSerialPort::SerialPortError error);
+private slots:
+
     void socketError(QTcpSocket::SocketError error);
     void socketConnected(void);
 

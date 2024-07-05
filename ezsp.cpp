@@ -26,9 +26,6 @@ static const uint16_t crcTable[256] =
 
 EZSP::EZSP(QSettings *config, QObject *parent) : Adapter(config, parent), m_timer(new QTimer(this)), m_version(0)
 {
-    if (config->value("security/enabled", false).toBool())
-        m_networkKey = QByteArray::fromHex(config->value("security/key", "000102030405060708090a0b0c0d0e0f").toString().remove("0x").toUtf8());
-
     m_config.append({EZSP_CONFIG_TC_REJOINS_WELL_KNOWN_KEY_TIMEOUT_S,  qToLittleEndian <quint16> (0x005A)});
     m_config.append({EZSP_CONFIG_TRUST_CENTER_ADDRESS_CACHE_SIZE,      qToLittleEndian <quint16> (0x0002)});
     m_config.append({EZSP_CONFIG_FRAGMENT_DELAY_MS,                    qToLittleEndian <quint16> (0x0032)});
@@ -428,22 +425,15 @@ bool EZSP::startNetwork(quint64 extendedPanId)
     }
 
     memset(&security, 0, sizeof(security));
-    security.bitmask = EZSP_SECURITY_TRUST_CENTER_USES_HASHED_LINK_KEY | EZSP_SECURITY_REQUIRE_ENCRYPTED_KEY;
+    security.bitmask = qToLittleEndian <quint16> (EZSP_SECURITY_TRUST_CENTER_USES_HASHED_LINK_KEY | EZSP_SECURITY_REQUIRE_ENCRYPTED_KEY | EZSP_SECURITY_HAVE_PRECONFIGURED_KEY | EZSP_SECURITY_HAVE_NETWORK_KEY);
 
-    if (!m_networkKey.isEmpty())
+    for (quint8 i = 0; i < sizeof(security.preconfiguredKey); i += 4)
     {
-        security.bitmask |= EZSP_SECURITY_HAVE_PRECONFIGURED_KEY | EZSP_SECURITY_HAVE_NETWORK_KEY;
-
-        for (quint8 i = 0; i < sizeof(security.preconfiguredKey); i += 4)
-        {
-            quint32 value = QRandomGenerator::global()->generate();
-            memcpy(security.preconfiguredKey + i, &value, sizeof(value));
-        }
-
-        memcpy(security.networkKey, m_networkKey.constData(), sizeof(security.networkKey));
+        quint32 value = QRandomGenerator::global()->generate();
+        memcpy(security.preconfiguredKey + i, &value, sizeof(value));
     }
 
-    security.bitmask = qToLittleEndian(security.bitmask);
+    memcpy(security.networkKey, m_networkKey.constData(), sizeof(security.networkKey));
 
     if (!sendFrame(EZSP_FRAME_SET_INITIAL_SECURITY_STATE, QByteArray(reinterpret_cast <char*> (&security), sizeof(security))) || m_replyStatus)
     {
@@ -727,8 +717,8 @@ void EZSP::parseData(QByteArray &buffer)
 {
     while (!buffer.isEmpty())
     {
-        QByteArray data;
         quint16 length, crc;
+        QByteArray packet;
 
         if (buffer.startsWith(QByteArray::fromHex("1ac102")) || buffer.startsWith(QByteArray::fromHex("1ac202")))
             buffer.remove(0, 1);
@@ -739,7 +729,7 @@ void EZSP::parseData(QByteArray &buffer)
         length = static_cast <quint16> (buffer.indexOf(ASH_PACKET_FLAG));
 
         if (m_portDebug)
-            logInfo << "Packet received:" << buffer.mid(0, length + 1).toHex(':');
+            logInfo << "Frame received:" << buffer.mid(0, length + 1).toHex(':');
 
         for (int i = 0; i < length; i++)
         {
@@ -748,24 +738,24 @@ void EZSP::parseData(QByteArray &buffer)
 
             if (buffer.at(i) != 0x7D)
             {
-                data.append(buffer.at(i));
+                packet.append(buffer.at(i));
                 continue;
             }
 
             switch (buffer.at(++i))
             {
-                case 0x31: data.append(0x11); break;
-                case 0x33: data.append(0x13); break;
-                case 0x38: data.append(0x18); break;
-                case 0x3A: data.append(0x1A); break;
-                case 0x5D: data.append(0x7D); break;
-                case 0x5E: data.append(0x7E); break;
+                case 0x31: packet.append(0x11); break;
+                case 0x33: packet.append(0x13); break;
+                case 0x38: packet.append(0x18); break;
+                case 0x3A: packet.append(0x1A); break;
+                case 0x5D: packet.append(0x7D); break;
+                case 0x5E: packet.append(0x7E); break;
 
                 default:
 
                     if (buffer.at(i) != 0x11 && buffer.at(i) != 0x13)
                     {
-                        handleError(QString("Packet %1 unstaffing failed at position %2").arg(QString(buffer.toHex(':'))).arg(i));
+                        handleError(QString("Frame %1 unstaffing failed at position %2").arg(QString(buffer.mid(0, length + 1).toHex(':'))).arg(i));
                         return;
                     }
 
@@ -773,15 +763,15 @@ void EZSP::parseData(QByteArray &buffer)
             }
         }
 
-        memcpy(&crc, data.constData() + data.length() - 2, sizeof(crc));
+        memcpy(&crc, packet.constData() + packet.length() - 2, sizeof(crc));
 
-        if (crc != getCRC(reinterpret_cast <quint8*> (data.data()), data.length() - 2))
+        if (crc != getCRC(reinterpret_cast <quint8*> (packet.data()), packet.length() - 2))
         {
-            handleError(QString("Packet %1 CRC mismatch").arg(QString(buffer.mid(0, length + 1).toHex(':'))));
+            handleError(QString("Packet %1 CRC mismatch").arg(QString(packet.toHex(':'))));
             return;
         }
 
-        m_queue.enqueue(data);
+        m_queue.enqueue(packet);
         buffer.remove(0, length + 1);
     }
 }
