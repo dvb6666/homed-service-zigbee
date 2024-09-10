@@ -7,7 +7,7 @@
 #include "logger.h"
 #include "zcl.h"
 
-Adapter::Adapter(QSettings *config, QObject *parent) : QObject(parent), m_receiveTimer(new QTimer(this)), m_resetTimer(new QTimer(this)), m_permitJoinTimer(new QTimer(this)), m_serial(new QSerialPort(this)), m_socket(new QTcpSocket(this)), m_serialError(false), m_connected(false), m_permitJoin(false)
+Adapter::Adapter(QSettings *config, QObject *parent) : QObject(parent), m_receiveTimer(new QTimer(this)), m_resetTimer(new QTimer(this)), m_permitJoinTimer(new QTimer(this)), m_serial(new QSerialPort(this)), m_socket(new QTcpSocket(this)), m_serialError(false), m_connected(false), m_permitJoinAddress(PERMIT_JOIN_BROARCAST_ADDRESS), m_permitJoin(false)
 {
     QString portName = config->value("zigbee/port", "/dev/ttyUSB0").toString();
 
@@ -32,7 +32,7 @@ Adapter::Adapter(QSettings *config, QObject *parent) : QObject(parent), m_receiv
     }
     else
     {
-        QList <QString> list = portName.remove("tcp://").split(":");
+        QList <QString> list = portName.remove("tcp://").split(':');
 
         m_device = m_socket;
         m_adddress = QHostAddress(list.value(0));
@@ -42,7 +42,7 @@ Adapter::Adapter(QSettings *config, QObject *parent) : QObject(parent), m_receiv
         connect(m_socket, &QTcpSocket::connected, this, &Adapter::socketConnected);
     }
 
-    m_panId = static_cast <quint16> (config->value("zigbee/panid", "0x1A62").toString().toInt(nullptr, 16));
+    m_panId = static_cast <quint16> (config->value("zigbee/panid", "0x1010").toString().toInt(nullptr, 16));
     m_channel = static_cast <quint8> (config->value("zigbee/channel", 11).toInt());
     m_power = static_cast <quint8> (config->value("zigbee/power", 20).toInt());
 
@@ -58,9 +58,16 @@ Adapter::Adapter(QSettings *config, QObject *parent) : QObject(parent), m_receiv
     logInfo << "Using channel" << m_channel << "and PAN ID" << QString::asprintf("0x%04x", m_panId);
     m_defaultKey = QByteArray::fromHex("5a6967426565416c6c69616e63653039");
 
-    m_endpoints.insert(0x01, EndpointData(new EndpointDataObject(PROFILE_HA,  0x0005)));
-    m_endpoints.insert(0x0C, EndpointData(new EndpointDataObject(PROFILE_ZLL, 0x0005)));
-    m_endpoints.insert(0xF2, EndpointData(new EndpointDataObject(PROFILE_GP,  0x0061)));
+    m_endpoints.insert(0x01, EndpointData(new EndpointDataObject(PROFILE_HA,   0x0005)));
+    m_endpoints.insert(0x02, EndpointData(new EndpointDataObject(PROFILE_IPM,  0x0005)));
+    m_endpoints.insert(0x03, EndpointData(new EndpointDataObject(PROFILE_HA,   0x0005)));
+    m_endpoints.insert(0x04, EndpointData(new EndpointDataObject(PROFILE_TA,   0x0005)));
+    m_endpoints.insert(0x05, EndpointData(new EndpointDataObject(PROFILE_PHHC, 0x0005)));
+    m_endpoints.insert(0x06, EndpointData(new EndpointDataObject(PROFILE_AMI,  0x0005)));
+    m_endpoints.insert(0x07, EndpointData(new EndpointDataObject(PROFILE_HA,   0x0005)));
+    m_endpoints.insert(0x08, EndpointData(new EndpointDataObject(PROFILE_HA,   0x0005)));
+    m_endpoints.insert(0x0C, EndpointData(new EndpointDataObject(PROFILE_ZLL,  0x0005)));
+    m_endpoints.insert(0xF2, EndpointData(new EndpointDataObject(PROFILE_GP,   0x0061)));
 
     m_endpoints.value(0x01)->inClusters() =
     {
@@ -262,9 +269,7 @@ void Adapter::reset(void)
 
 void Adapter::sendData(const QByteArray &buffer)
 {
-    if (m_portDebug)
-        logInfo << "Serial data sent:" << buffer.toHex(':');
-
+    logDebug(m_portDebug) << "Serial data sent:" << buffer.toHex(':');
     m_device->write(buffer);
 }
 
@@ -299,7 +304,7 @@ void Adapter::socketConnected(void)
     setsockopt(descriptor, SOL_TCP, TCP_KEEPINTVL, &interval, sizeof(interval));
     setsockopt(descriptor, SOL_TCP, TCP_KEEPCNT, &count, sizeof(count));
 
-    logInfo << "Successfully connected to" << m_adddress.toString();
+    logInfo << "Successfully connected to" << QString("%1:%2").arg(m_adddress.toString()).arg(m_port);
 
     m_connected = true;
     reset();
@@ -314,10 +319,9 @@ void Adapter::readyRead(void)
 {
     QByteArray buffer = m_device->readAll();
 
-    if (m_portDebug)
-        logInfo << "Serial data received:" << buffer.toHex(':');
-
+    logDebug(m_portDebug)  << "Serial data received:" << buffer.toHex(':');
     parseData(buffer);
+
     QTimer::singleShot(0, this, &Adapter::handleQueue);
 }
 

@@ -199,10 +199,10 @@ bool ZBoss::sendRequest(quint16 command, const QByteArray &data, quint8 id)
     QByteArray payload;
     quint16 crc;
 
-    if (m_adapterDebug)
-        logInfo << "-->" << QString::asprintf("0x%04x", command) << data.toHex(':');
+    logDebug(m_adapterDebug) << "-->" << QString::asprintf("0x%04x", command) << data.toHex(':');
 
     m_command = command;
+    m_replyStatus = 0xFF;
 
     lowLevelHeader.signature = qToBigEndian <quint16> (ZBOSS_SIGNATURE);
     lowLevelHeader.length = data.length() + 12;
@@ -239,8 +239,7 @@ void ZBoss::sendAcknowledge(void)
 
 void ZBoss::parsePacket(quint8 type, quint16 command, const QByteArray &data)
 {
-    if (m_adapterDebug)
-        logInfo << "<--" << QString::asprintf("0x%04x", qFromBigEndian(command)) << data.toHex(':');
+    logDebug(m_adapterDebug) << "<--" << QString::asprintf("0x%04x", command) << data.toHex(':');
 
     if (type == ZBOSS_TYPE_RESPONSE && command == m_command)
     {
@@ -349,9 +348,7 @@ void ZBoss::parsePacket(quint8 type, quint16 command, const QByteArray &data)
 
         default:
         {
-            if (m_adapterDebug)
-                logWarning << "Unrecognized ZBoss command" << QString::asprintf("0x%04x", command) << "with data" << (data.isEmpty() ? "(empty)" : data.toHex(':'));
-
+            logDebug(type != ZBOSS_TYPE_RESPONSE && m_adapterDebug) << "Unrecognized ZBoss command" << QString::asprintf("0x%04x", command) << "with data" << (data.isEmpty() ? "(empty)" : data.toHex(':'));
             break;
         }
     }
@@ -394,7 +391,7 @@ bool ZBoss::startCoordinator(void)
 
         m_manufacturerName = "Nordic Semiconductor";
         m_modelName = QString::asprintf("ZBOSS NCP");
-        m_firmware = QString::asprintf("%d.%d.%d", static_cast <quint8> (m_replyData.at(1)), static_cast <quint8> (m_replyData.at(2)), static_cast <quint8> (m_replyData.at(3)));
+        m_firmware = QString::asprintf("%d.%d.%d.%d", static_cast <quint8> (m_replyData.at(3)), static_cast <quint8> (m_replyData.at(2)), static_cast <quint8> (m_replyData.at(1), static_cast <quint8> (m_replyData.at(0))));
 
         logInfo << QString("Adapter type: %1 (%2)").arg(m_modelName, m_firmware).toUtf8().constData();
 
@@ -547,6 +544,15 @@ bool ZBoss::startCoordinator(void)
     if (!sendRequest(ZBOSS_SET_TX_POWER, QByteArray(1, static_cast <char> (m_power))) || m_replyStatus)
         logWarning << "Set TX power request failed";
 
+    if (!sendRequest(ZBOSS_SET_RX_ON_WHEN_IDLE, QByteArray(1, 0x01)) || m_replyStatus)
+        logWarning << "Set RX enabled when idle request failed";
+
+    if (!sendRequest(ZBOSS_SET_ED_TIMEOUT, QByteArray(1, 0x08)) || m_replyStatus)
+        logWarning << "Set end device timeout request failed";
+
+    if (!sendRequest(ZBOSS_SET_MAX_CHILDREN, QByteArray(1, 0x64)) || m_replyStatus)
+        logWarning << "Set maximum children number request failed";
+
     ieeeAddress = qToBigEndian(qFromLittleEndian(ieeeAddress));
     m_ieeeAddress = QByteArray(reinterpret_cast <char*> (&ieeeAddress), sizeof(ieeeAddress));
 
@@ -575,8 +581,7 @@ void ZBoss::parseData(QByteArray &buffer)
             return;
         }
 
-        if (m_portDebug)
-            logInfo << "Frame received:" << buffer.mid(0, length).toHex(':');
+        logDebug(m_portDebug) << "Frame received:" << buffer.mid(0, length).toHex(':');
 
         if (lowLevelHeader->flags & ZBOSS_FLAG_ACK)
         {
@@ -609,22 +614,23 @@ void ZBoss::parseData(QByteArray &buffer)
 
 bool ZBoss::permitJoin(bool enabled)
 {
+    quint16 networkAddress = enabled ? m_permitJoinAddress : PERMIT_JOIN_BROARCAST_ADDRESS;
     zbossPermitJoinStruct request;
 
     memset(&request, 0, sizeof(request));
     request.duration = enabled ? 0xF0 : 0x00;
 
-    if (!sendRequest(ZBOSS_ZDO_PERMIT_JOINING_REQ, QByteArray(reinterpret_cast <char*> (&request), sizeof(request))) || m_replyStatus)
+    if (networkAddress == PERMIT_JOIN_BROARCAST_ADDRESS && (!sendRequest(ZBOSS_ZDO_PERMIT_JOINING_REQ, QByteArray(reinterpret_cast <char*> (&request), sizeof(request))) || m_replyStatus))
     {
         logWarning << "Local permit join request failed";
         return false;
     }
 
-    request.dstAddress = qToLittleEndian <quint16> (PERMIT_JOIN_BROARCAST_ADDRESS);
+    request.dstAddress = qToLittleEndian <quint16> (networkAddress);
 
     if (!sendRequest(ZBOSS_ZDO_PERMIT_JOINING_REQ, QByteArray(reinterpret_cast <char*> (&request), sizeof(request))) || m_replyStatus)
     {
-        logWarning << "Broadcast permit join request failed";
+        logWarning << "Permit join request failed";
         return false;
     }
 

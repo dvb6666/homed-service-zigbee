@@ -58,6 +58,27 @@
     }
   ],
 
+  "LifeConrol":
+  [
+    {
+      "description":    "Life Control 10A Smart Plug MCLH-03 with PTVO Firmware",
+      "modelNames":     ["ptvo_mclh03"],
+      "properties":     ["status"],
+      "actions":        ["status"],
+      "bindings":       ["status"],
+      "exposes":        ["switch"],
+      "endpointId":     1
+    },
+    {
+      "modelNames":     ["ptvo_mclh03"],
+      "properties":     ["energy", "voltage", "current", "power"],
+      "bindings":       ["energy", "power"],
+      "exposes":        ["energy", "voltage", "current", "power"],
+      "options":        {"energyDivider": 1000, "voltageDivider": 100, "currentDivider": 1000, "powerDivider": 10},
+      "endpointId":     2
+    }
+  ],
+
   "Lmahmutov":
   [
     {
@@ -161,9 +182,9 @@
     {
       "modelNames":     ["Watermeter_TLSR8258"],
       "properties":     ["batteryPercentage"],
-      "exposes":        ["battery"],
       "bindings":       ["battery"],
       "reportings":     ["batteryPercentage"],
+      "exposes":        ["battery"],
       "endpointId":     1
     },
     {
@@ -183,6 +204,12 @@
                           "pulseVolume": {"min": 1, "max": 100}
                         },
       "endpointId":     3
+    },
+    {
+      "modelNames":     ["Watermeter_TLSR8258"],
+      "properties":     ["iasWaterLeak"],
+      "exposes":        ["waterLeak"],
+      "endpointId":     4
     },
     {
       "modelNames":     ["Watermeter_TLSR8258"],
@@ -223,6 +250,22 @@
       "exposes":        ["action", "scene"],
       "options":        {"action": {"enum": ["on", "off", "moveLevelUp", "moveLevelDown", "stopLevel"]}},
       "endpointId":     [1, 2, 3, 4]
+    }
+  ],
+
+  "TexasInstruments":
+  [
+    {
+      "description":    "Texas Instruments Router",
+      "modelNames":     ["ti.router"],
+      "properties":     ["customAttributes"],
+      "actions":        ["customAttributes"],
+      "exposes":        ["transmitPower"],
+      "options":        {
+                          "customAttributes": {"transmitPower": {"type": "value", "clusterId": 0, "attributeId": 4919, "dataType": 40, "action": true}},
+                          "transmitPower": {"min": -20, "max": 20}
+                        },
+      "endpointId":     8
     }
   ],
 

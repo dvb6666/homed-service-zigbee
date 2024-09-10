@@ -24,8 +24,10 @@ static const uint16_t crcTable[256] =
     0xEF1F, 0xFF3E, 0xCF5D, 0xDF7C, 0xAF9B, 0xBFBA, 0x8FD9, 0x9FF8, 0x6E17, 0x7E36, 0x4E55, 0x5E74, 0x2E93, 0x3EB2, 0x0ED1, 0x1EF0
 };
 
-EZSP::EZSP(QSettings *config, QObject *parent) : Adapter(config, parent), m_timer(new QTimer(this)), m_version(0)
+EZSP::EZSP(QSettings *config, QObject *parent) : Adapter(config, parent), m_timer(new QTimer(this)), m_version(0), m_errorCount(0)
 {
+    m_watchdog = config->value("zigbee/watchdog", true).toBool();
+
     m_config.append({EZSP_CONFIG_TC_REJOINS_WELL_KNOWN_KEY_TIMEOUT_S,  qToLittleEndian <quint16> (0x005A)});
     m_config.append({EZSP_CONFIG_TRUST_CENTER_ADDRESS_CACHE_SIZE,      qToLittleEndian <quint16> (0x0002)});
     m_config.append({EZSP_CONFIG_FRAGMENT_DELAY_MS,                    qToLittleEndian <quint16> (0x0032)});
@@ -186,9 +188,7 @@ bool EZSP::sendFrame(quint16 frameId, const QByteArray &data, bool version)
 
     if (version)
     {
-        if (m_adapterDebug)
-            logInfo << "-->" << QString::asprintf("0x%02x", m_sequenceId) << "(legacy version request)";
-
+        logDebug(m_adapterDebug) << "-->" << QString::asprintf("0x%02x", m_sequenceId) << "(legacy version request)";
         payload.append(static_cast <char> (m_sequenceId));
         payload.append(2, 0x00);
     }
@@ -201,9 +201,7 @@ bool EZSP::sendFrame(quint16 frameId, const QByteArray &data, bool version)
         header.frameControlHigh = 0x01;
         header.frameId = qToLittleEndian(frameId);
 
-        if (m_adapterDebug)
-            logInfo << "-->" << QString::asprintf("0x%02x", m_sequenceId) <<  QString::asprintf("0x%02x%02x", header.frameControlLow, header.frameControlHigh) << QString::asprintf("0x%04x", frameId) << data.toHex(':');
-
+        logDebug(m_adapterDebug) << "-->" << QString::asprintf("0x%02x", m_sequenceId) <<  QString::asprintf("0x%02x%02x", header.frameControlLow, header.frameControlHigh) << QString::asprintf("0x%04x", frameId) << data.toHex(':');
         payload.append(reinterpret_cast <char*> (&header), sizeof(header));
     }
 
@@ -218,13 +216,21 @@ bool EZSP::sendFrame(quint16 frameId, const QByteArray &data, bool version)
         sendRequest(control, payload);
 
         if (waitForSignal(this, SIGNAL(dataReceived()), ASH_REQUEST_TIMEOUT) && m_replyReceived)
+        {
+            m_errorCount = 0;
             return true;
+        }
 
         if (m_errorReceived)
-            return false;
+            break;
 
         control |= 0x08;
     }
+
+    m_errorCount++;
+
+    if (m_watchdog && m_errorCount == EZSP_MAX_ERRORS)
+        handleError(QString("Watchdog triggered after %1 request errors...").arg(EZSP_MAX_ERRORS));
 
     return false;
 }
@@ -263,8 +269,7 @@ void EZSP::parsePacket(const QByteArray &payload)
     const ezspHeaderStruct *header = reinterpret_cast <const ezspHeaderStruct*> (payload.constData());
     QByteArray data = payload.mid(sizeof(ezspHeaderStruct));
 
-    if (m_adapterDebug)
-        logInfo << "<--" << QString::asprintf("0x%02x", header->sequence) <<  QString::asprintf("0x%02x%02x", header->frameControlLow, header->frameControlHigh) << QString::asprintf("0x%04x", qFromLittleEndian(header->frameId)) << data.toHex(':');
+    logDebug(m_adapterDebug) << "<--" << QString::asprintf("0x%02x", header->sequence) <<  QString::asprintf("0x%02x%02x", header->frameControlLow, header->frameControlHigh) << QString::asprintf("0x%04x", qFromLittleEndian(header->frameId)) << data.toHex(':');
 
     if (!(header->frameControlLow & 0x18) && header->sequence == m_sequenceId)
     {
@@ -367,9 +372,7 @@ void EZSP::parsePacket(const QByteArray &payload)
 
         default:
         {
-            if (m_adapterDebug)
-                logInfo << "Unrecognozed frame id:" << QString::asprintf("0x%04x", qFromLittleEndian(header->frameId));
-
+            logDebug(m_adapterDebug) << "Unrecognozed frame id:" << QString::asprintf("0x%04x", qFromLittleEndian(header->frameId));
             break;
         }
     }
@@ -727,9 +730,7 @@ void EZSP::parseData(QByteArray &buffer)
             return;
 
         length = static_cast <quint16> (buffer.indexOf(ASH_PACKET_FLAG));
-
-        if (m_portDebug)
-            logInfo << "Frame received:" << buffer.mid(0, length + 1).toHex(':');
+        logDebug(m_portDebug) << "Frame received:" << buffer.mid(0, length + 1).toHex(':');
 
         for (int i = 0; i < length; i++)
         {
@@ -842,9 +843,7 @@ void EZSP::handleQueue(void)
 
         if ((control & 0xE0) == ASH_CONTROL_NAK)
         {
-            if (m_adapterDebug)
-                logWarning << "Received NAK frame:" << QString::asprintf("%d, %d", m_acknowledgeId, control & 0x07).toUtf8().constData();
-
+            logDebug(m_adapterDebug) << "Received NAK frame:" << QString::asprintf("%d, %d", m_acknowledgeId, control & 0x07).toUtf8().constData();
             emit dataReceived();
             break;
         }

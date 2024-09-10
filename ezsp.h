@@ -11,6 +11,8 @@
 #define ASH_CONTROL_RSTACK                                  0xC1
 #define ASH_CONTROL_ERROR                                   0xC2
 
+#define EZSP_MAX_ERRORS                                     10
+
 #define EZSP_FRAME_VERSION                                  0x0000
 #define EZSP_FRAME_REGISTER_ENDPOINT                        0x0002
 #define EZSP_FRAME_SET_CONCENTRATOR                         0x0010
@@ -323,8 +325,10 @@ private:
 
     QTimer *m_timer;
     quint8 m_version, m_stackStatus, m_sequenceId, m_acknowledgeId;
+    bool m_watchdog;
 
     QByteArray m_replyData;
+    quint8 m_errorCount;
     bool m_replyReceived, m_errorReceived;
 
     QList <ezspSetConfigStruct> m_config, m_policy;

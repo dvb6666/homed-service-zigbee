@@ -24,13 +24,14 @@
       "modelNames":     ["_TZE200_bkkmqmyo", "_TZE200_eaac7dkw", "_TZE204_bkkmqmyo", "_TZE204_wbhaespm"],
       "properties":     ["tuyaDataPoints"],
       "actions":        ["tuyaDataPoints"],
-      "exposes":        ["switch", "energy", "voltage", "current", "power", "frequency"],
+      "exposes":        ["switch", "energy", "producedEnergy", "voltage", "current", "power", "frequency"],
       "options":        {
                           "tuyaDataPoints":
                           {
                             "1":    [{"name": "energy", "type": "value", "divider": 100}],
                             "6":    [{"name": "elictricity", "type": "raw"}],
                             "16":   [{"name": "status", "type": "bool", "action": true}],
+                            "102":  [{"name": "producedEnergy", "type": "value", "divider": 100}],
                             "103":  [{"name": "power", "type": "value", "divider": 100}],
                             "105":  [{"name": "frequency", "type": "value", "divider": 100}],
                             "111":  [{"name": "powerFactor", "type": "value", "divider": 10}]
@@ -75,12 +76,35 @@
       "modelNames":     ["_TZE200_bcusnqt8"],
       "properties":     ["tuyaDataPoints"],
       "actions":        ["tuyaDataPoints"],
-      "exposes":        ["energy", "voltage", "current", "power"],
+      "exposes":        ["energy", "producedEnergy", "voltage", "current", "power"],
       "options":        {
                           "tuyaDataPoints":
                           {
                             "1":    [{"name": "energy", "type": "value", "divider": 100}],
+                            "2":    [{"name": "producedEnergy", "type": "value", "divider": 100}],
                             "6":    [{"name": "elictricity", "type": "raw"}]
+                          }
+                        }
+    },
+    {
+      "description":    "TUYA TS0601 Electricity Meter (Type F)",
+      "modelNames":     ["_TZE204_81yrt3lo"],
+      "properties":     ["tuyaDataPoints"],
+      "actions":        ["tuyaDataPoints"],
+      "exposes":        ["voltage", "frequency", "energy_1", "energy_2", "producedEnergy_1", "producedEnergy_2", "current_1", "current_2", "power_1", "power_2"],
+      "options":        {
+                          "tuyaDataPoints":
+                          {
+                            "101":  [{"name": "power_1", "type": "value", "divider": 10}],
+                            "105":  [{"name": "power_1", "type": "value", "divider": 10}],
+                            "106":  [{"name": "energy_1", "type": "value", "divider": 100}],
+                            "107":  [{"name": "producedEnergy_1", "type": "value", "divider": 100}],
+                            "108":  [{"name": "energy_2", "type": "value", "divider": 100}],
+                            "109":  [{"name": "producedEnergy_2", "type": "value", "divider": 100}],
+                            "111":  [{"name": "frequency", "type": "value", "divider": 100}],
+                            "112":  [{"name": "voltage", "type": "value", "divider": 10}],
+                            "113":  [{"name": "current_1", "type": "value", "divider": 1000}],
+                            "114":  [{"name": "current_2", "type": "value", "divider": 1000}]
                           }
                         }
     },
@@ -373,7 +397,7 @@
                             "15":   [{"name": "battery", "type": "value"}],
                             "21":   [{"name": "melody", "type": "enum", "action": true}]
                           },
-                          "duration": {"min": 0, "max": 1800},
+                          "duration": {"min": 1, "max": 1800},
                           "alarm": {"type": "toggle", "control": true, "icon": "mdi:bell"},
                           "melody": {"min": 0, "max": 17},
                           "tuyaDataQuery": true
@@ -381,23 +405,60 @@
     },
     {
       "description":    "TUYA TS0601 Siren (Type B)",
+      "modelNames":     ["_TZE200_d0yu2xgi"],
+      "properties":     ["tuyaDataPoints"],
+      "actions":        ["tuyaDataPoints"],
+      "exposes":        ["batteryStatus", "temperature", "humidity", "alarm", "volumeMode", "duration", "melody", "temperatureLow", "temperatureHigh", "temperatureAlarm", "humidityLow", "humidityHigh", "humidityAlarm"],
+      "options":        {
+                          "tuyaDataPoints":
+                          {
+                            "101":  [{"name": "batteryStatus", "type": "enum"}],
+                            "102":  [{"name": "melody", "type": "enum", "action": true}],
+                            "103":  [{"name": "duration", "type": "value", "action": true}],
+                            "104":  [{"name": "alarm", "type": "bool", "action": true}],
+                            "105":  [{"name": "temperature", "type": "value", "divider": 10}],
+                            "106":  [{"name": "humidity", "type": "value"}],
+                            "107":  [{"name": "temperatureLow", "type": "value", "action": true}],
+                            "108":  [{"name": "temperatureHigh", "type": "value", "action": true}],
+                            "109":  [{"name": "humidityLow", "type": "value", "aaction": true}],
+                            "110":  [{"name": "humidityHigh", "type": "value", "action": true}],
+                            "113":  [{"name": "temperatureAlarm", "type": "bool", "action": true}],
+                            "114":  [{"name": "humidityAlarm", "type": "bool", "action": true}],
+                            "116":  [{"name": "volumeMode", "type": "enum", "action": true}]
+                          },
+                          "batteryStatus": {"enum": ["full", "high", "meduim", "low", "usb"]},
+                          "melody": {"min": 0, "max": 17},
+                          "duration": {"min": 1, "max": 1800},
+                          "alarm": {"type": "toggle", "control": true, "icon": "mdi:bell"},
+                          "temperatureLow": {"min": -20, "max": 80},
+                          "temperatureHigh": {"min": -20, "max": 80},
+                          "humidityLow": {"min": 0, "max": 100},
+                          "humidityHigh": {"min": 0, "max": 100},
+                          "temperatureAlarm": {"type": "toggle", "control": true, "icon": "mdi:thermometer-alert"},
+                          "humidityAlarm": {"type": "toggle", "control": true, "icon": "mdi:water-percent-alert"},
+                          "volumeMode": {"enum": ["high", "meduim", "low"]},
+                          "tuyaDataQuery": true
+                        }
+    },
+    {
+      "description":    "TUYA TS0601 Siren (Type C)",
       "modelNames":     ["_TZE204_fncxk3ob", "_TZE204_k7mfgaen"],
       "properties":     ["tuyaDataPoints"],
       "actions":        ["tuyaDataPoints"],
-      "exposes":        ["battery", "batteryStatus", "powerMode", "alarm", "volumeMode", "duration", "melody"],
+      "exposes":        ["battery", "batteryStatus", "powerStatus", "alarm", "volumeMode", "duration", "melody"],
       "options":        {
                           "tuyaDataPoints":
                           {
                             "5":    [{"name": "volumeMode", "type": "enum", "action": true}],
-                            "6":    [{"name": "powerMode", "type": "enum"}],
+                            "6":    [{"name": "powerStatus", "type": "enum"}],
                             "7":    [{"name": "duration", "type": "value", "action": true}],
                             "13":   [{"name": "alarm", "type": "bool", "action": true}],
                             "14":   [{"name": "batteryStatus", "type": "enum"}],
                             "15":   [{"name": "battery", "type": "value"}],
-                            "21":   [{"name": "melody", "type": "enum", "offset": -1, "action": true}]
+                            "21":   [{"name": "melody", "type": "enum", "action": true}]
                           },
                           "volumeMode": {"enum": ["low", "medium", "high", "mute"]},
-                          "powerMode": {"type": "sensor", "enum": ["normal", "backup"], "icon": "mdi:power-plug-battery"},
+                          "powerStatus": {"type": "sensor", "enum": ["normal", "backup"], "icon": "mdi:power-plug-battery"},
                           "duration": {"min": 1, "max": 60, "unit": "min"},
                           "alarm": {"type": "toggle", "control": true, "icon": "mdi:bell"},
                           "batteryStatus": {"enum": ["low", "medium", "high"]},
@@ -425,7 +486,7 @@
     },
     {
       "description":    "TUYA TS0601 Garage Door Controller",
-      "modelNames":     ["_TZE200_nklqjk62", "_TZE204_nklqjk62"],
+      "modelNames":     ["_TZE200_wfxuhoea", "_TZE200_nklqjk62", "_TZE204_nklqjk62"],
       "properties":     ["tuyaDataPoints"],
       "actions":        ["tuyaDataPoints"],
       "exposes":        ["trigger", "contact"],
@@ -851,7 +912,7 @@
     },
     {
       "description":    "TUYA TS0601 Roller Blind Motor (Type A)",
-      "modelNames":     ["_TZE200_fctwhugx", "_TZE200_hsgrhjpf", "_TZE200_pw7mji0l"],
+      "modelNames":     ["_TZE200_fctwhugx", "_TZE200_pw7mji0l"],
       "properties":     ["tuyaDataPoints", "tuyaCoverMotor"],
       "actions":        ["tuyaDataPoints", "tuyaCoverMotor"],
       "exposes":        ["cover", "reverse", "speed"],
@@ -888,7 +949,7 @@
     },
     {
       "description":    "TUYA TS0601 Roller Blind Motor (Type C)",
-      "modelNames":     ["_TZE200_zah67ekd"],
+      "modelNames":     ["_TZE200_hsgrhjpf", "_TZE200_icka1clh", "_TZE200_zah67ekd"],
       "properties":     ["tuyaDataPoints", "tuyaCoverMotor"],
       "actions":        ["tuyaDataPoints", "tuyaCoverMotor"],
       "exposes":        ["cover", "operationMode", "reverse", "setLowerLimit", "setUpperLimit", "speed", "resetLimits"],
@@ -909,21 +970,66 @@
                         }
     },
     {
+      "description":    "TUYA TS0207 Rain Sensor WKD-LS100",
+      "modelNames":     ["_TZ3210_tgvtvdoc"],
+      "properties":     ["batteryPercentage", "iasRain", "tuyaDataPoints"],
+      "bindings":       ["battery"],
+      "reportings":     ["batteryPercentage"],
+      "exposes":        ["battery", "rain", "batteryLow", "rainIntensity", "illuminance"],
+      "options":        {
+                          "tuyaDataPoints":
+                          {
+                            "101":    [{"name": "illuminance", "type": "value"}],
+                            "105":    [{"name": "rainIntensity", "type": "value"}]
+                          },
+                          "rain": {"type": "binary", "icon": "mdi:weather-pouring"},
+                          "illuminance": {"unit": "mV"},
+                          "rainIntensity": {"type": "sensor", "unit": "mV", "icon": "mdi:weather-pouring"}
+                        }
+    },
+    {
       "description":    "TUYA TS0207 Network Router",
       "modelNames":     ["_TZ3000_5k5vh43t", "_TZ3000_gszjt2xx", "_TZ3000_m0vaazab", "_TZ3000_misw04hq", "_TZ3000_nkkl7uzv", "_TZ3000_nlsszmzl", "_TZ3000_ufttklsz", "_TZ3000_wlquqiiz"]
     },
     {
+      "description":    "TUYA TS0001 Fingerbot",
+      "modelNames":     ["_TZ3210_dse8ogfy", "_TZ3210_j4pdtz9v"],
+      "properties":     ["status", "tuyaDataPoints"],
+      "actions":        ["status", "tuyaDataPoints"],
+      "exposes":        ["battery", "status", "operationMode", "reverse", "touchControl", "lowerLimit", "upperLimit", "delay"],
+      "options":        {
+                          "tuyaDataPoints":
+                          {
+                            "101":  [{"name": "operationMode", "type": "enum", "action": true}],
+                            "102":  [{"name": "lowerLimit", "type": "value", "action": true}],
+                            "103":  [{"name": "delay", "type": "value", "action": true}],
+                            "104":  [{"name": "reverse", "type": "enum", "action": true}],
+                            "105":  [{"name": "battery", "type": "value"}],
+                            "106":  [{"name": "upperLimit", "type": "value", "action": true}],
+                            "107":  [{"name": "touchControl", "type": "bool", "action": true}]
+
+                          },
+                          "operationMode": {"enum": ["click", "switch"]},
+                          "lowerLimit": {"min": 50, "max": 100},
+                          "delay": {"min": 0, "max": 10},
+                          "reverse": {"enum": [false, true]},
+                          "upperLimit": {"min": 0, "max": 50},
+                          "tuyaCustomCommand": true,
+                          "tuyaMagic": true
+                        }
+    },
+    {
       "description":    "TUYA TS0001/TS0011 1-Channel Relay",
-      "modelNames":     ["_TZ3000_3a9beq8a", "_TZ3000_46t1rvdu", "_TZ3000_4rbqgcuv", "_TZ3000_5ng23zjs", "_TZ3000_6axxqqi2", "_TZ3000_ark8nv4y", "_TZ3000_fdxihpp7", "_TZ3000_gjrubzje", "_TZ3000_hafsqare", "_TZ3000_hbxsdd6k", "_TZ3000_hktqahrq", "_TZ3000_ji4araar", "_TZ3000_m9af2l6g", "_TZ3000_majwnphg", "_TZ3000_mx3vgyea", "_TZ3000_npzfdcof", "_TZ3000_q6a3tepg", "_TZ3000_qmi1cfuq", "_TZ3000_qsp2pwtf", "_TZ3000_rmjr4ufz", "_TZ3000_skueekg3", "_TZ3000_tqlv4ug4", "_TZ3000_txpirhfq", "_TZ3000_tygpxwqa", "_TZ3000_v7gnj3ad", "_TZ3000_zw7yf6yk"],
+      "modelNames":     ["_TZ3000_3a9beq8a", "_TZ3000_46t1rvdu", "_TZ3000_4rbqgcuv", "_TZ3000_5ng23zjs", "_TZ3000_6axxqqi2", "_TZ3000_ark8nv4y", "_TZ3000_fdxihpp7", "_TZ3000_gjrubzje", "_TZ3000_hafsqare", "_TZ3000_hbxsdd6k", "_TZ3000_hktqahrq", "_TZ3000_ji4araar", "_TZ3000_m9af2l6g", "_TZ3000_majwnphg", "_TZ3000_mx3vgyea", "_TZ3000_npzfdcof", "_TZ3000_q6a3tepg", "_TZ3000_qmi1cfuq", "_TZ3000_qsp2pwtf", "_TZ3000_rmjr4ufz", "_TZ3000_skueekg3", "_TZ3000_tqlv4ug4", "_TZ3000_txpirhfq", "_TZ3000_tygpxwqa", "_TZ3000_v7gnj3ad", "_TZ3000_v7sopte0", "_TZ3000_zw7yf6yk"],
       "properties":     ["status", "tuyaSwitchType", "tuyaPowerOnStatus"],
       "actions":        ["status", "tuyaSwitchType", "tuyaPowerOnStatus"],
       "bindings":       ["status"],
       "exposes":        ["switch", "switchType", "powerOnStatus"],
-      "options":        {"switchType": {"enum": ["toggle", "static", "momentary"]}, "powerOnStatus": {"enum": ["off", "on", "previous"]}, "tuyaMagic": true}
+      "options":        {"switchType": {"enum": ["toggle", "static", "momentary"]}, "powerOnStatus": {"enum": ["off", "on", "previous"]}, "tuyaMagic": true, "skipAttributeRead": true}
     },
     {
       "description":    "TUYA TS0001/TS0011 1-Channel Switch",
-      "modelNames":     ["_TYZB01_4vgantdz", "_TYZB01_reyozfcg", "_TYZB01_xfpdrwvc", "_TZ3000_5ftkaulg", "TZ3000_9hpxg80k", "_TZ3000_hhiodade", "_TZ3000_l8fsgo6p", "_TZ3000_oex7egmt", "_TZ3000_wrhhi5h2"],
+      "modelNames":     ["_TYZB01_4vgantdz", "_TYZB01_reyozfcg", "_TYZB01_xfpdrwvc", "_TZ3000_5ftkaulg", "_TZ3000_9hpxg80k", "_TZ3000_gidy6sjs", "_TZ3000_hhiodade", "_TZ3000_j8dbnrgx", "_TZ3000_l8fsgo6p", "_TZ3000_oex7egmt", "_TZ3000_wrhhi5h2", "_TZ3002_fdxihpp7"],
       "properties":     ["status", "tuyaIndicatorMode", "tuyaPowerOnStatus"],
       "actions":        ["status", "tuyaIndicatorMode", "tuyaPowerOnStatus"],
       "bindings":       ["status"],
@@ -932,15 +1038,15 @@
     },
     {
       "description":    "TUYA TS0002/TS0012 2-Channel Relay",
-      "modelNames":     ["_TZ3000_bvrlqyj7", "_TZ3000_01gpyda5", "_TZ3000_4zf0crgo", "_TZ3000_5gey1ohx", "_TZ3000_7ed9cqgi", "_TZ3000_fisb3ajo", "_TZ3000_jl7qyupf", "_TZ3000_nPGIPl5D", "_TZ3000_zmy4lslw"],
+      "modelNames":     ["_TZ3000_bvrlqyj7", "_TZ3000_01gpyda5", "_TZ3000_4zf0crgo", "_TZ3000_5gey1ohx", "_TZ3000_7ed9cqgi", "_TZ3000_fisb3ajo", "_TZ3000_jl7qyupf", "_TZ3000_mtnpt6ws", "_TZ3000_nPGIPl5D", "_TZ3000_zmy4lslw"],
       "properties":     ["tuyaSwitchType", "tuyaPowerOnStatus"],
       "actions":        ["tuyaSwitchType", "tuyaPowerOnStatus"],
       "exposes":        ["switchType", "powerOnStatus"],
-      "options":        {"switchType": {"enum": ["toggle", "static", "momentary"]}, "powerOnStatus": {"enum": ["off", "on", "previous"]}, "tuyaMagic": true},
+      "options":        {"switchType": {"enum": ["toggle", "static", "momentary"]}, "powerOnStatus": {"enum": ["off", "on", "previous"]}, "tuyaMagic": true, "skipAttributeRead": true},
       "endpointId":     1
     },
     {
-      "modelNames":     ["_TZ3000_bvrlqyj7", "_TZ3000_01gpyda5", "_TZ3000_4zf0crgo", "_TZ3000_5gey1ohx", "_TZ3000_7ed9cqgi", "_TZ3000_fisb3ajo", "_TZ3000_jl7qyupf", "_TZ3000_nPGIPl5D", "_TZ3000_zmy4lslw"],
+      "modelNames":     ["_TZ3000_bvrlqyj7", "_TZ3000_01gpyda5", "_TZ3000_4zf0crgo", "_TZ3000_5gey1ohx", "_TZ3000_7ed9cqgi", "_TZ3000_fisb3ajo", "_TZ3000_jl7qyupf", "_TZ3000_mtnpt6ws", "_TZ3000_nPGIPl5D", "_TZ3000_zmy4lslw"],
       "properties":     ["status"],
       "actions":        ["status"],
       "bindings":       ["status"],
@@ -966,15 +1072,15 @@
     },
     {
       "description":    "TUYA TS0003/TS0013 3-Channel Relay",
-      "modelNames":     ["_TZ3000_4o16jdca", "_TZ3000_odzoiovu", "_TZ3000_vsasbzkf", "_TZ3000_ypgri8yz"],
+      "modelNames":     ["_TZ3000_4o16jdca", "_TZ3000_hbic3ka3", "_TZ3000_lvhy15ix", "_TZ3000_mw1pqqqt", "_TZ3000_odzoiovu", "_TZ3000_vsasbzkf", "_TZ3000_ypgri8yz"],
       "properties":     ["tuyaSwitchType", "tuyaPowerOnStatus"],
       "actions":        ["tuyaSwitchType", "tuyaPowerOnStatus"],
       "exposes":        ["switchType", "powerOnStatus"],
-      "options":        {"switchType": {"enum": ["toggle", "static", "momentary"]}, "powerOnStatus": {"enum": ["off", "on", "previous"]}, "tuyaMagic": true},
+      "options":        {"switchType": {"enum": ["toggle", "static", "momentary"]}, "powerOnStatus": {"enum": ["off", "on", "previous"]}, "tuyaMagic": true, "skipAttributeRead": true},
       "endpointId":     1
     },
     {
-      "modelNames":     ["_TZ3000_4o16jdca", "_TZ3000_odzoiovu", "_TZ3000_vsasbzkf", "_TZ3000_ypgri8yz"],
+      "modelNames":     ["_TZ3000_4o16jdca", "_TZ3000_hbic3ka3", "_TZ3000_lvhy15ix", "_TZ3000_mw1pqqqt", "_TZ3000_odzoiovu", "_TZ3000_vsasbzkf", "_TZ3000_ypgri8yz"],
       "properties":     ["status"],
       "actions":        ["status"],
       "bindings":       ["status"],
@@ -1004,7 +1110,7 @@
       "properties":     ["tuyaSwitchType", "tuyaPowerOnStatus"],
       "actions":        ["tuyaSwitchType", "tuyaPowerOnStatus"],
       "exposes":        ["switchType", "powerOnStatus"],
-      "options":        {"switchType": {"enum": ["toggle", "static", "momentary"]}, "powerOnStatus": {"enum": ["off", "on", "previous"]}, "tuyaMagic": true},
+      "options":        {"switchType": {"enum": ["toggle", "static", "momentary"]}, "powerOnStatus": {"enum": ["off", "on", "previous"]}, "tuyaMagic": true, "skipAttributeRead": true},
       "endpointId":     1
     },
     {
@@ -1056,7 +1162,7 @@
       "properties":     ["tuyaIndicatorMode", "tuyaPowerOnStatus"],
       "actions":        ["tuyaIndicatorMode", "tuyaPowerOnStatus"],
       "exposes":        ["indicatorMode", "powerOnStatus"],
-      "options":        {"powerOnStatus": {"enum": ["off", "on", "previous"]}, "tuyaMagic": true},
+      "options":        {"powerOnStatus": {"enum": ["off", "on", "previous"]}, "tuyaMagic": true, "skipAttributeRead": true},
       "endpointId":     1
     },
     {
@@ -1102,7 +1208,7 @@
     },
     {
       "description":    "TUYA TS0001 or TS000F 1-Channel Relay with Power Monitoring",
-      "modelNames":     ["_TZ3000_g92baclx", "_TZ3000_kqvb5akv", "_TZ3000_mkhkxx1p", "_TZ3000_qnejhcsu", "_TZ3000_tgddllx4", "_TZ3000_x3ewpzyr", "_TZ3000_xkap8wtb"],
+      "modelNames":     ["_TZ3000_g92baclx", "_TZ3000_hzlsaltw", "_TZ3000_ikuxinvo", "_TZ3000_kqvb5akv", "_TZ3000_mkhkxx1p", "_TZ3000_qaabwu5c", "_TZ3000_qlai3277", "_TZ3000_qnejhcsu", "_TZ3000_tgddllx4", "_TZ3000_x3ewpzyr", "_TZ3000_xkap8wtb"],
       "properties":     ["status", "energy", "voltage", "current", "power", "tuyaSwitchType", "tuyaPowerOnStatus"],
       "actions":        ["status", "tuyaSwitchType", "tuyaPowerOnStatus"],
       "bindings":       ["status", "energy", "power"],
@@ -1141,25 +1247,6 @@
       "endpointId":     [1, 2]
     },
     {
-      "description":    "TUYA TS011F Smart Plug with Power Monitoring (Type A)",
-      "modelNames":     ["_TZ3000_0yxeawjt", "_TZ3000_0zfrhq4i", "_TZ3000_1h2x4akh", "_TZ3000_5f43h46b", "_TZ3000_7dndcnnb", "_TZ3000_9vo5icau", "_TZ3000_aim0ztek", "_TZ3000_amdymr7l", "_TZ3000_b28wrpvx", "_TZ3000_cehuw1lw", "_TZ3000_cjrngdr3", "_TZ3000_dksbtrzs", "_TZ3000_dpo1ysak", "_TZ3000_ew3ldmgx", "_TZ3000_f1bapcit", "_TZ3000_fgwhjm9j", "_TZ3000_fukaa7nc", "_TZ3000_gjnozsaz", "_TZ3000_gznh2xla", "_TZ3000_gvn91tmx", "_TZ3000_hdopuwv6", "_TZ3000_idrffznf", "_TZ3000_iksasdbv", "_TZ3000_jtgxgmks", "_TZ3000_jvzvulen", "_TZ3000_ko6v90pg", "_TZ3000_ksw8qtmt", "_TZ3000_kx0pris5", "_TZ3000_mlswgkc3", "_TZ3000_mraovvmm", "_TZ3000_nfnmi125", "_TZ3000_nmsciidq", "_TZ3000_ps3dmato", "_TZ3210_q7oryllx", "_TZ3000_r6buo8ba", "_TZ3000_rdfh8cfs", "_TZ3000_rdtixbnu", "_TZ3000_ss98ec5d", "_TZ3000_typdpbpg", "_TZ3000_w0qqde0g", "_TZ3000_waho4jtj", "_TZ3000_yujkchbz", "_TZ3000_z1pnpsdo", "_TZ3000_zloso4jk"],
-      "properties":     ["status", "energy", "voltage", "current", "power", "tuyaChildLock", "tuyaIndicatorMode", "tuyaPowerOnStatus"],
-      "actions":        ["status", "tuyaChildLock", "tuyaIndicatorMode", "tuyaPowerOnStatus"],
-      "bindings":       ["status", "energy", "power"],
-      "reportings":     ["status", "energy", "voltage", "current", "power"],
-      "exposes":        ["switch", "indicatorMode", "powerOnStatus", "childLock", "energy", "voltage", "current", "power"],
-      "options":        {"switch": "outlet", "powerOnStatus": {"enum": ["off", "on", "previous"]}, "energyDivider": 100, "currentDivider": 1000, "tuyaMagic": true}
-    },
-    {
-      "description":    "TUYA TS011F Smart Plug with Power Monitoring (Type B)",
-      "modelNames":     ["_TZ3000_cphmq0q7", "_TZ3000_okaz9tjs", "_TZ3000_u5u4cakc"],
-      "properties":     ["status", "energy", "voltage", "current", "power", "tuyaChildLock", "tuyaIndicatorMode", "tuyaPowerOnStatus"],
-      "actions":        ["status", "tuyaChildLock", "tuyaIndicatorMode", "tuyaPowerOnStatus"],
-      "polls":          ["energy", "voltage", "current", "power"],
-      "exposes":        ["switch", "indicatorMode", "powerOnStatus", "childLock", "energy", "voltage", "current", "power"],
-      "options":        {"switch": "outlet", "powerOnStatus": {"enum": ["off", "on", "previous"]}, "energyDivider": 100, "currentDivider": 1000, "pollInterval": 60}
-    },
-    {
       "description":    "TUYA TS011F 4-Channel Smart Plug with USB",
       "modelNames":     ["_TZ3000_cfnprab5", "_TZ3000_o005nuxx"],
       "options":        {"tuyaMagic": true, "endpointName": {"5": "USB"}}
@@ -1173,7 +1260,26 @@
       "endpointId":     [1, 2, 3, 4, 5]
     },
     {
-      "description":    "TUYA TS0121 Smart Plug with Power Monitoring",
+      "description":    "TUYA TS011F Smart Plug with Power Monitoring Polling",
+      "modelNames":     ["_TZ3000_0yxeawjt", "_TZ3000_cphmq0q7", "_TZ3000_okaz9tjs", "_TZ3000_ps3dmato", "_TZ3000_u5u4cakc"],
+      "properties":     ["status", "energy", "voltage", "current", "power", "tuyaChildLock", "tuyaIndicatorMode", "tuyaPowerOnStatus"],
+      "actions":        ["status", "tuyaChildLock", "tuyaIndicatorMode", "tuyaPowerOnStatus"],
+      "polls":          ["status", "energy", "voltage", "current", "power"],
+      "exposes":        ["switch", "indicatorMode", "powerOnStatus", "childLock", "energy", "voltage", "current", "power"],
+      "options":        {"switch": "outlet", "powerOnStatus": {"enum": ["off", "on", "previous"]}, "energyDivider": 100, "currentDivider": 1000, "pollInterval": 30}
+    },
+    {
+      "description":    "TUYA TS011F Smart Plug with Power Monitoring",
+      "modelNames":     ["TS011F"],
+      "properties":     ["status", "energy", "voltage", "current", "power", "tuyaChildLock", "tuyaIndicatorMode", "tuyaPowerOnStatus"],
+      "actions":        ["status", "tuyaChildLock", "tuyaIndicatorMode", "tuyaPowerOnStatus"],
+      "bindings":       ["status", "energy", "power"],
+      "reportings":     ["status", "energy", "voltage", "current", "power"],
+      "exposes":        ["switch", "indicatorMode", "powerOnStatus", "childLock", "energy", "voltage", "current", "power"],
+      "options":        {"switch": "outlet", "powerOnStatus": {"enum": ["off", "on", "previous"]}, "energyDivider": 100, "currentDivider": 1000, "tuyaMagic": true}
+    },
+    {
+      "description":    "TUYA TS0121 Smart Plug with Power Monitoring Polling",
       "modelNames":     ["TS0121"],
       "properties":     ["status", "energy", "voltage", "current", "power", "tuyaIndicatorMode", "tuyaPowerOnStatus"],
       "actions":        ["status", "tuyaIndicatorMode", "tuyaPowerOnStatus"],
@@ -1206,8 +1312,16 @@
       "options":        {"light": ["level", "color", "colorTemperature", "colorMode"], "colorTemperature": {"min": 143, "max": 500}, "powerSource": 1}
     },
     {
+      "description":    "TUYA TS0052/TS1101 1-Channel Dimmer",
+      "modelNames":     ["_TZ3000_mgusv51k", "_TZ3000_xfs39dbf"],
+      "properties":     ["status", "level"],
+      "actions":        ["status", "level"],
+      "exposes":        ["light"],
+      "options":        {"light": ["level"]}
+    },
+    {
       "description":    "TUYA TS0052/TS1101 2-Channel Dimmer",
-      "modelNames":     ["TS0052", "_TZ3000_7ysdnebc"],
+      "modelNames":     ["_TZ3000_7ysdnebc", "_TZ3000_kvwrdf47", "_TZ3000_zjtxnoft"],
       "properties":     ["status", "level"],
       "actions":        ["status", "level"],
       "exposes":        ["light"],

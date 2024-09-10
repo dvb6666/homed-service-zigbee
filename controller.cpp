@@ -1,7 +1,8 @@
+#include <math.h>
 #include "controller.h"
 #include "logger.h"
 
-Controller::Controller(const QString &configFile) : HOMEd(configFile), m_avaliabilityTimer(new QTimer(this)), m_propertiesTimer(new QTimer(this)), m_zigbee(new ZigBee(getConfig(), this)), m_commands(QMetaEnum::fromType <Command> ()), m_networkStarted(false)
+Controller::Controller(const QString &configFile) : HOMEd(configFile, true), m_deviceDataTimer(new QTimer(this)), m_propertiesTimer(new QTimer(this)), m_zigbee(new ZigBee(getConfig(), this)), m_commands(QMetaEnum::fromType <Command> ()), m_networkStarted(false)
 {
     logInfo << "Starting version" << SERVICE_VERSION;
     logInfo << "Configuration file is" << getConfig()->fileName();
@@ -10,7 +11,7 @@ Controller::Controller(const QString &configFile) : HOMEd(configFile), m_avaliab
     m_haStatus = getConfig()->value("homeassistant/status", "homeassistant/status").toString();
     m_haEnabled = getConfig()->value("homeassistant/enabled", false).toBool();
 
-    connect(m_avaliabilityTimer, &QTimer::timeout, this, &Controller::updateAvailability);
+    connect(m_deviceDataTimer, &QTimer::timeout, this, &Controller::updateDeviceData);
     connect(m_propertiesTimer, &QTimer::timeout, this, &Controller::updateProperties);
 
     connect(m_zigbee, &ZigBee::networkStarted, this, &Controller::networkStarted);
@@ -18,7 +19,7 @@ Controller::Controller(const QString &configFile) : HOMEd(configFile), m_avaliab
     connect(m_zigbee, &ZigBee::endpointUpdated, this, &Controller::endpointUpdated);
     connect(m_zigbee, &ZigBee::statusUpdated, this, &Controller::statusUpdated);
 
-    m_avaliabilityTimer->start(UPDATE_AVAILABILITY_INTERVAL);
+    m_deviceDataTimer->start(UPDATE_DEVICE_DATA_INTERVAL);
     m_propertiesTimer->setSingleShot(true);
 
     m_zigbee->devices()->setNames(getConfig()->value("mqtt/names", false).toBool());
@@ -39,7 +40,7 @@ void Controller::serviceOnline(void)
 {
     for (auto it = m_zigbee->devices()->begin(); it != m_zigbee->devices()->end(); it++)
     {
-        if (it.value()->removed())
+        if (it.value()->removed() || it.value()->logicalType() == LogicalType::Coordinator)
             continue;
 
         publishExposes(it.value().data());
@@ -60,8 +61,8 @@ void Controller::quit(void)
 
 void Controller::mqttConnected(void)
 {
-    mqttSubscribe(mqttTopic("command/zigbee"));
-    mqttSubscribe(mqttTopic("td/zigbee/#"));
+    mqttSubscribe(mqttTopic("command/%1").arg(serviceTopic()));
+    mqttSubscribe(mqttTopic("td/%1/#").arg(serviceTopic()));
 
     if (m_haEnabled)
         mqttSubscribe(m_haStatus);
@@ -77,7 +78,7 @@ void Controller::mqttReceived(const QByteArray &message, const QMqttTopicName &t
     QString subTopic = topic.name().replace(mqttTopic(), QString());
     QJsonObject json = QJsonDocument::fromJson(message).object();
 
-    if (subTopic == "command/zigbee")
+    if (subTopic == QString("command/%1").arg(serviceTopic()))
     {
         Command command = static_cast <Command> (m_commands.keyToValue(json.value("action").toString().toUtf8().constData()));
 
@@ -85,12 +86,12 @@ void Controller::mqttReceived(const QByteArray &message, const QMqttTopicName &t
         {
             case Command::restartService:
                 logWarning << "Restart request received...";
-                mqttPublish(mqttTopic("command/zigbee"), QJsonObject(), true);
+                mqttPublish(topic.name(), QJsonObject(), true);
                 QCoreApplication::exit(EXIT_RESTART);
                 break;
 
             case Command::setPermitJoin:
-                m_zigbee->setPermitJoin(json.value("enabled").toBool());
+                m_zigbee->setPermitJoin(json.value("device").toString(), json.value("enabled").toBool());
                 break;
 
             case Command::togglePermitJoin:
@@ -127,8 +128,12 @@ void Controller::mqttReceived(const QByteArray &message, const QMqttTopicName &t
                 m_zigbee->removeAllGroups(json.value("device").toString(), static_cast <quint8> (json.value("endpointId").toInt()));
                 break;
 
+            case Command::otaRefresh:
+                m_zigbee->otaControl(json.value("device").toString(), true, false);
+                break;
+
             case Command::otaUpgrade:
-                m_zigbee->otaUpgrade(json.value("device").toString(), static_cast <quint8> (json.value("endpointId").toInt()), json.value("fileName").toString(), json.value("force").toBool());
+                m_zigbee->otaControl(json.value("device").toString(), false, true);
                 break;
 
             case  Command::getProperties:
@@ -149,18 +154,18 @@ void Controller::mqttReceived(const QByteArray &message, const QMqttTopicName &t
                 break;
         }
     }
-    else if (subTopic.startsWith("td/zigbee/"))
+    else if (subTopic.startsWith(QString("td/%1/").arg(serviceTopic())))
     {
-        QList <QString> list = subTopic.split('/');
+        QList <QString> list = subTopic.remove(QString("td/%1/").arg(serviceTopic())).split('/');
 
-        if (list.value(2) != "group")
+        if (list.value(0) != "group")
         {
             for (auto it = json.begin(); it != json.end(); it++)
             {
                 if (!it.value().toVariant().isValid())
                     continue;
 
-                m_zigbee->deviceAction(list.value(2), static_cast <quint8> (list.value(3).toInt()), it.key(), it.value().toVariant());
+                m_zigbee->deviceAction(list.value(0), static_cast <quint8> (list.value(1).toInt()), it.key(), it.value().toVariant());
             }
         }
         else
@@ -170,7 +175,7 @@ void Controller::mqttReceived(const QByteArray &message, const QMqttTopicName &t
                 if (!it.value().toVariant().isValid())
                     continue;
 
-                m_zigbee->groupAction(static_cast <quint16> (list.value(3).toInt()), it.key(), it.value().toVariant());
+                m_zigbee->groupAction(static_cast <quint16> (list.value(1).toInt()), it.key(), it.value().toVariant());
             }
         }
     }
@@ -183,9 +188,10 @@ void Controller::mqttReceived(const QByteArray &message, const QMqttTopicName &t
     }
 }
 
-void Controller::updateAvailability(void)
+void Controller::updateDeviceData(void)
 {
     qint64 time = QDateTime::currentSecsSinceEpoch();
+    QJsonObject json;
 
     for (auto it = m_zigbee->devices()->begin(); it != m_zigbee->devices()->end(); it++)
     {
@@ -203,7 +209,12 @@ void Controller::updateAvailability(void)
         if (it.value()->availability() == check && m_lastSeen.value(it.value()->ieeeAddress()) == it.value()->lastSeen())
             continue;
 
-        mqttPublish(mqttTopic("device/zigbee/%1").arg(m_zigbee->devices()->names() ? it.value()->name() : it.value()->ieeeAddress().toHex(':')), {{"lastSeen", it.value()->lastSeen()}, {"status", it.value()->availability() == Availability::Online ? "online" : "offline"}}, true);
+        json = {{"lastSeen", it.value()->lastSeen()}, {"status", it.value()->availability() == Availability::Online ? "online" : "offline"}};
+
+        if (it.value()->ota().running())
+            json.insert("otaProgress", round(it.value()->ota().progress()));
+
+        mqttPublish(mqttTopic("device/%1/%2").arg(serviceTopic(), m_zigbee->devices()->names() ? it.value()->name() : it.value()->ieeeAddress().toHex(':')), json, true);
         m_lastSeen.insert(it.value()->ieeeAddress(), it.value()->lastSeen());
     }
 }
@@ -242,12 +253,12 @@ void Controller::deviceEvent(DeviceObject *device, ZigBee::Event event, const QJ
         case ZigBee::Event::deviceLeft:
         case ZigBee::Event::deviceRemoved:
         case ZigBee::Event::deviceAboutToRename:
-            mqttPublish(mqttTopic("device/zigbee/%1").arg(m_zigbee->devices()->names() ? device->name() : device->ieeeAddress().toHex(':')), QJsonObject(), true);
+            mqttPublish(mqttTopic("device/%1/%2").arg(serviceTopic(), m_zigbee->devices()->names() ? device->name() : device->ieeeAddress().toHex(':')), QJsonObject(), true);
             remove = true;
             break;
 
         case ZigBee::Event::deviceUpdated:
-            mqttPublish(mqttTopic("device/zigbee/%1").arg(m_zigbee->devices()->names() ? device->name() : device->ieeeAddress().toHex(':')), {{"lastSeen", device->lastSeen()}, {"status", device->availability() == Availability::Online ? "online" : "offline"}}, true);
+            mqttPublish(mqttTopic("device/%1/%2").arg(serviceTopic(), m_zigbee->devices()->names() ? device->name() : device->ieeeAddress().toHex(':')), {{"lastSeen", device->lastSeen()}, {"status", device->availability() == Availability::Online ? "online" : "offline"}}, true);
             break;
 
         default:
@@ -261,7 +272,7 @@ void Controller::deviceEvent(DeviceObject *device, ZigBee::Event event, const QJ
     if (check)
         publishExposes(device, remove);
 
-    mqttPublish(mqttTopic("event/zigbee"), QJsonObject::fromVariantMap(map));
+    mqttPublish(mqttTopic("event/%1").arg(serviceTopic()), QJsonObject::fromVariantMap(map));
 }
 
 void Controller::endpointUpdated(DeviceObject *device, quint8 endpointId)
@@ -292,12 +303,12 @@ void Controller::endpointUpdated(DeviceObject *device, quint8 endpointId)
     }
 
     if (!endpointMap.isEmpty())
-        mqttPublish(mqttTopic("fd/zigbee/%1/%2").arg(m_zigbee->devices()->names() ? device->name() : device->ieeeAddress().toHex(':')).arg(endpointId), QJsonObject::fromVariantMap(endpointMap), retain);
+        mqttPublish(mqttTopic("fd/%1/%2/%3").arg(serviceTopic(), m_zigbee->devices()->names() ? device->name() : device->ieeeAddress().toHex(':')).arg(endpointId), QJsonObject::fromVariantMap(endpointMap), retain);
 
-    mqttPublish(mqttTopic("fd/zigbee/%1").arg(m_zigbee->devices()->names() ? device->name() : device->ieeeAddress().toHex(':')), QJsonObject::fromVariantMap(deviceMap), retain);
+    mqttPublish(mqttTopic("fd/%1/%2").arg(serviceTopic(), m_zigbee->devices()->names() ? device->name() : device->ieeeAddress().toHex(':')), QJsonObject::fromVariantMap(deviceMap), retain);
 }
 
 void Controller::statusUpdated(const QJsonObject &json)
 {
-    mqttPublish(mqttTopic("status/zigbee"), json, true);
+    mqttPublish(mqttTopic("status/%1").arg(serviceTopic()), json, true);
 }
