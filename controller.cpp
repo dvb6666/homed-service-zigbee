@@ -10,6 +10,7 @@ Controller::Controller(const QString &configFile) : HOMEd(configFile, true), m_d
     m_haPrefix = getConfig()->value("homeassistant/prefix", "homeassistant").toString();
     m_haStatus = getConfig()->value("homeassistant/status", "homeassistant/status").toString();
     m_haEnabled = getConfig()->value("homeassistant/enabled", false).toBool();
+    m_haInterval = static_cast <qint64> (getConfig()->value("homeassistant/interval", -1).toInt());
 
     connect(m_deviceDataTimer, &QTimer::timeout, this, &Controller::updateDeviceData);
     connect(m_propertiesTimer, &QTimer::timeout, this, &Controller::updateProperties);
@@ -38,16 +39,24 @@ void Controller::publishExposes(DeviceObject *device, bool remove)
 
 void Controller::serviceOnline(void)
 {
+    QString coordinator = "";
+
     for (auto it = m_zigbee->devices()->begin(); it != m_zigbee->devices()->end(); it++)
     {
-        if (it.value()->removed() || it.value()->logicalType() == LogicalType::Coordinator)
+        if (it.value()->removed())
             continue;
+        else if (it.value()->logicalType() == LogicalType::Coordinator)
+        {
+            if (m_haInterval > 0)
+                coordinator = m_zigbee->devices()->names() ? it.value()->name() : it.value()->ieeeAddress().toHex(':');
+            continue;
+        }
 
         publishExposes(it.value().data());
     }
 
     if (m_haEnabled)
-        mqttPublishDiscovery("ZigBee", SERVICE_VERSION, m_haPrefix, true);
+        mqttPublishDiscovery("ZigBee", SERVICE_VERSION, m_haPrefix, coordinator, true);
 
     m_zigbee->devices()->storeDatabase();
     mqttPublishStatus();
@@ -198,8 +207,11 @@ void Controller::updateDeviceData(void)
         Availability check = it.value()->availability();
         qint64 timeout = it.value()->options().value("availability").toInt();
 
-        if (it.value()->removed() || it.value()->logicalType() == LogicalType::Coordinator)
+        if (it.value()->removed() || (it.value()->logicalType() == LogicalType::Coordinator && m_haInterval < 1))
             continue;
+
+        if (it.value()->logicalType() == LogicalType::Coordinator && m_haInterval > 0 && it.value()->active() && time - it.value()->lastSeen() >= m_haInterval)
+            it.value()->updateLastSeen();
 
         if (!timeout)
             timeout = it.value()->batteryPowered() ? 86400 : 600;
