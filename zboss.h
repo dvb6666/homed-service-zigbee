@@ -16,7 +16,7 @@
 
 #define ZBOSS_FLAG_ACK                                  0x01
 #define ZBOSS_FLAG_FIRST_FRAGMENT                       0x40
-#define ZBISS_FLAG_LAST_FRAGMENT                        0x80
+#define ZBOSS_FLAG_LAST_FRAGMENT                        0x80
 
 #define ZBOSS_GET_MODULE_VERSION                        0x0001
 #define ZBOSS_NCP_RESET                                 0x0002
@@ -45,6 +45,7 @@
 #define ZBOSS_ZDO_PERMIT_JOINING_REQ                    0x020b
 #define ZBOSS_ZDO_DEV_ANNCE_IND                         0x020c
 #define ZBOSS_ZDO_MGMT_LQI_REQ                          0x0210
+#define ZBOSS_ZDO_SET_NODE_DESC_MANUF_CODE              0x0216
 #define ZBOSS_APSDE_DATA_REQ                            0x0301
 #define ZBOSS_APSDE_DATA_IND                            0x0306
 #define ZBOSS_NWK_FORMATION                             0x0401
@@ -230,14 +231,15 @@ public:
 
 private:
 
-    bool m_clear;
+    QTimer *m_timer;
+    bool m_clear, m_esp;
 
     quint16 m_command;
     QByteArray m_replyData;
 
     quint8 m_sequenceId, m_acknowledgeId;
-    quint16 m_lqiRequestAddress;
 
+    QMap <quint8, quint16> m_lqiRequests;
     QList <zbossSetPolicyStruct> m_policy;
 
     quint8 getCRC8(quint8 *data, quint32 length);
@@ -247,14 +249,18 @@ private:
     void sendAcknowledge(void);
     void parsePacket(quint8 type, quint16 command, const QByteArray &data);
 
+    void handleReset(void);
     bool startCoordinator(void);
 
+    void setManufacturerCode(quint16 value);
+
     void softReset(void) override;
-    void parseData(QByteArray &buffer) override;
+    void parseData(void) override;
     bool permitJoin(bool enabled) override;
 
 private slots:
 
+    void resetManufacturerCode(void);
     void handleQueue(void) override;
     void serialError(QSerialPort::SerialPortError error) override;
 

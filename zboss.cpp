@@ -2,8 +2,9 @@
 #include <QThread>
 #include "logger.h"
 #include "zboss.h"
+#include "zcl.h"
 
-static uint8_t const crc8Table[256] =
+static quint8 const crc8Table[256] =
 {
     0xea, 0xd4, 0x96, 0xa8, 0x12, 0x2c, 0x6e, 0x50, 0x7f, 0x41, 0x03, 0x3d, 0x87, 0xb9, 0xfb, 0xc5,
     0xa5, 0x9b, 0xd9, 0xe7, 0x5d, 0x63, 0x21, 0x1f, 0x30, 0x0e, 0x4c, 0x72, 0xc8, 0xf6, 0xb4, 0x8a,
@@ -23,7 +24,7 @@ static uint8_t const crc8Table[256] =
     0xd0, 0xee, 0xac, 0x92, 0x28, 0x16, 0x54, 0x6a, 0x45, 0x7b, 0x39, 0x07, 0xbd, 0x83, 0xc1, 0xff
 };
 
-static uint16_t const crc16Table[256] =
+static quint16 const crc16Table[256] =
 {
     0x0000, 0x1189, 0x2312, 0x329b, 0x4624, 0x57ad, 0x6536, 0x74bf, 0x8c48, 0x9dc1, 0xaf5a, 0xbed3, 0xca6c, 0xdbe5, 0xe97e, 0xf8f7,
     0x1081, 0x0108, 0x3393, 0x221a, 0x56a5, 0x472c, 0x75b7, 0x643e, 0x9cc9, 0x8d40, 0xbfdb, 0xae52, 0xdaed, 0xcb64, 0xf9ff, 0xe876,
@@ -43,7 +44,7 @@ static uint16_t const crc16Table[256] =
     0xf78f, 0xe606, 0xd49d, 0xc514, 0xb1ab, 0xa022, 0x92b9, 0x8330, 0x7bc7, 0x6a4e, 0x58d5, 0x495c, 0x3de3, 0x2c6a, 0x1ef1, 0x0f78
 };
 
-ZBoss::ZBoss(QSettings *config, QObject *parent) : Adapter(config, parent), m_clear(false)
+ZBoss::ZBoss(QSettings *config, QObject *parent) : Adapter(config, parent), m_timer(new QTimer(this)), m_clear(false), m_esp(false)
 {
     m_policy.append({ZBOSS_POLICY_TC_LINK_KEYS_REQUIRED,           0x00});
     m_policy.append({ZBOSS_POLICY_IC_REQUIRED,                     0x00});
@@ -51,6 +52,9 @@ ZBoss::ZBoss(QSettings *config, QObject *parent) : Adapter(config, parent), m_cl
     m_policy.append({ZBOSS_POLICY_IGNORE_TC_REJOIN,                0x00});
     m_policy.append({ZBOSS_POLICY_APS_INSECURE_JOIN,               0x00});
     m_policy.append({ZBOSS_POLICY_DISABLE_NWK_MGMT_CHANNEL_UPDATE, 0x00});
+
+    connect(m_timer, &QTimer::timeout, this, &ZBoss::resetManufacturerCode);
+    m_timer->setSingleShot(true);
 }
 
 bool ZBoss::unicastRequest(quint8 id, quint16 networkAddress, quint8 srcEndPointId, quint8 dstEndPointId, quint16 clusterId, const QByteArray &payload)
@@ -168,7 +172,7 @@ bool ZBoss::leaveRequest(quint8 id, quint16 networkAddress)
 bool ZBoss::lqiRequest(quint8 id, quint16 networkAddress, quint8 index)
 {
     quint16 dstAddress = qToLittleEndian(networkAddress);
-    m_lqiRequestAddress = networkAddress;
+    m_lqiRequests.insert(id, networkAddress);
     return sendRequest(ZBOSS_ZDO_MGMT_LQI_REQ, QByteArray(reinterpret_cast <char*> (&dstAddress), sizeof(dstAddress)).append(static_cast <char> (index)), id);
 }
 
@@ -207,7 +211,7 @@ bool ZBoss::sendRequest(quint16 command, const QByteArray &data, quint8 id)
     lowLevelHeader.signature = qToBigEndian <quint16> (ZBOSS_SIGNATURE);
     lowLevelHeader.length = data.length() + 12;
     lowLevelHeader.type = ZBOSS_NCP_API_HL;
-    lowLevelHeader.flags = m_sequenceId << 2 | ZBOSS_FLAG_FIRST_FRAGMENT | ZBISS_FLAG_LAST_FRAGMENT;
+    lowLevelHeader.flags = m_sequenceId << 2 | ZBOSS_FLAG_FIRST_FRAGMENT | ZBOSS_FLAG_LAST_FRAGMENT;
     lowLevelHeader.crc = getCRC8(reinterpret_cast <quint8*> (&lowLevelHeader) + 2, sizeof(lowLevelHeader) - 3);
 
     commonHeader.version = ZBOSS_PROTOCOL_VERSION;
@@ -253,15 +257,7 @@ void ZBoss::parsePacket(quint8 type, quint16 command, const QByteArray &data)
         case ZBOSS_NCP_RESET:
         case ZBOSS_NCP_RESET_IND:
         {
-            m_sequenceId = 0;
-
-            if (!startCoordinator())
-            {
-                logWarning << "Coordinator startup failed";
-                break;
-            }
-
-            m_resetTimer->stop();
+            handleReset();
             break;
         }
 
@@ -319,15 +315,24 @@ void ZBoss::parsePacket(quint8 type, quint16 command, const QByteArray &data)
 
         case ZBOSS_ZDO_MGMT_LQI_REQ:
         {
-            emit zdoMessageReveived(m_lqiRequestAddress, ZDO_LQI_REQUEST, data.mid(2));
+            emit zdoMessageReveived(m_lqiRequests.value(static_cast <quint8> (data.at(0))), ZDO_LQI_REQUEST, data.mid(2));
+            m_lqiRequests.remove(static_cast <quint8> (data.at(0)));
             break;
         }
 
         case ZBOSS_ZDO_DEV_ANNCE_IND:
         {
             const zbossDeviceAnnounceStruct *message = reinterpret_cast <const zbossDeviceAnnounceStruct*> (data.constData());
-            quint64 ieeeAddress = qToBigEndian <quint64> (message->ieeeAddress);
-            emit deviceJoined(QByteArray(reinterpret_cast <char*> (&ieeeAddress), sizeof(ieeeAddress)), message->networkAddress);
+            quint64 address = qToBigEndian <quint64> (message->ieeeAddress);
+            QByteArray ieeeAddress(reinterpret_cast <char*> (&address), sizeof(address));
+
+            if (ieeeAddress.startsWith(QByteArray::fromHex("04cffc")) || ieeeAddress.startsWith(QByteArray::fromHex("54ef44")))
+            {
+                setManufacturerCode(MANUFACTURER_CODE_LUMI);
+                m_timer->start(20000);
+            }
+
+            emit deviceJoined(ieeeAddress, message->networkAddress);
             break;
         }
 
@@ -356,12 +361,25 @@ void ZBoss::parsePacket(quint8 type, quint16 command, const QByteArray &data)
     emit requestFinished(static_cast <quint8> (data.at(0)), m_replyStatus);
 }
 
+void ZBoss::handleReset(void)
+{
+    m_sequenceId = 0;
+
+    if (!startCoordinator())
+    {
+        logWarning << "Coordinator startup failed";
+        return;
+    }
+
+    m_resetTimer->stop();
+}
+
 bool ZBoss::startCoordinator(void)
 {
     quint32 channelMask = qToLittleEndian <quint32> (1 << m_channel);
     quint64 ieeeAddress;
 
-    if (!sendRequest(ZBOSS_GET_LOCAL_IEEE_ADDR) || m_replyStatus)
+    if (!sendRequest(ZBOSS_GET_LOCAL_IEEE_ADDR, QByteArray(1, 0x00)) || m_replyStatus)
     {
         logWarning << "Local IEEE address request failed";
         return false;
@@ -431,18 +449,6 @@ bool ZBoss::startCoordinator(void)
             check = true;
         }
 
-        if (!sendRequest(ZBOSS_GET_NWK_KEYS) || m_replyStatus)
-        {
-            logWarning << "Get adapter network key request failed";
-            return false;
-        }
-
-        if (m_replyData.mid(0, m_networkKey.length()) != m_networkKey)
-        {
-            logWarning << "Adapter network key doesn't match configuration";
-            check = true;
-        }
-
         if (check)
         {
             if (!m_write)
@@ -452,7 +458,7 @@ bool ZBoss::startCoordinator(void)
             }
 
             m_clear = true;
-            reset();
+            softReset();
 
             return true;
         }
@@ -563,28 +569,51 @@ bool ZBoss::startCoordinator(void)
     return true;
 }
 
+void ZBoss::setManufacturerCode(quint16 value)
+{
+    value = qToBigEndian(value);
+
+    if (sendRequest(ZBOSS_ZDO_SET_NODE_DESC_MANUF_CODE, QByteArray(reinterpret_cast <char*> (&value), sizeof(value))))
+        return;
+
+    logWarning << "Set manufacturer code request failed";
+}
+
 void ZBoss::softReset(void)
 {
     sendRequest(ZBOSS_NCP_RESET, QByteArray(1, m_clear ? 0x02 : 0x00));
 }
 
-void ZBoss::parseData(QByteArray &buffer)
+void ZBoss::parseData(void)
 {
-    while (!buffer.isEmpty())
-    {
-        zbossLowLevelHeaderStruct *lowLevelHeader = reinterpret_cast <zbossLowLevelHeaderStruct*> (buffer.data());
-        quint16 length = qFromLittleEndian(lowLevelHeader->length) + 2;
+    quint16 signature = qToBigEndian <quint16> (ZBOSS_SIGNATURE);
 
-        if (lowLevelHeader->signature != qToBigEndian <quint16> (ZBOSS_SIGNATURE))
+    if (m_buffer.startsWith("ESP-ROM"))
+    {
+        handleReset();
+        m_esp = true;
+        return;
+    }
+
+    while (!m_buffer.isEmpty())
+    {
+        int offset = m_buffer.indexOf(QByteArray(reinterpret_cast <char*> (&signature), sizeof(signature))), length;
+        zbossLowLevelHeaderStruct *lowLevelHeader;
+
+        if (offset < 0 || static_cast <size_t> (m_buffer.length() - offset) < sizeof(zbossLowLevelHeaderStruct))
             return;
+
+        lowLevelHeader = reinterpret_cast <zbossLowLevelHeaderStruct*> (m_buffer.data() + offset);
+        length = qFromLittleEndian(lowLevelHeader->length) + 2;
 
         if (lowLevelHeader->crc != getCRC8(reinterpret_cast <quint8*> (lowLevelHeader) + 2, sizeof(zbossLowLevelHeaderStruct) - 3))
         {
-            logWarning << QString("Frame %1 low level header CRC mismatch").arg(QString(buffer.mid(0, length).toHex(':')));
+            logWarning << QString("Frame %1 low level header CRC mismatch").arg(QString(m_buffer.mid(offset, length).toHex(':')));
+            m_buffer.clear();
             return;
         }
 
-        logDebug(m_portDebug) << "Frame received:" << buffer.mid(0, length).toHex(':');
+        logDebug(m_portDebug) << "Frame received:" << m_buffer.mid(offset, length).toHex(':');
 
         if (lowLevelHeader->flags & ZBOSS_FLAG_ACK)
         {
@@ -602,16 +631,17 @@ void ZBoss::parseData(QByteArray &buffer)
 
         if (length > 9)
         {
-            if (*(reinterpret_cast <quint16*> (buffer.data() + 7)) != getCRC16(reinterpret_cast <quint8*> (buffer.data() + 9), length - 9))
+            if (*(reinterpret_cast <quint16*> (m_buffer.data() + offset + 7)) != getCRC16(reinterpret_cast <quint8*> (m_buffer.data() + offset + 9), length - 9))
             {
-                logWarning << QString("Packet %1 CRC mismatch").arg(QString(buffer.mid(0, length).toHex(':')));
+                logWarning << QString("Packet %1 CRC mismatch").arg(QString(m_buffer.mid(offset, length).toHex(':')));
+                m_buffer.clear();
                 return;
             }
 
-            m_queue.enqueue(buffer.mid(9, length - 9));
+            m_queue.enqueue(m_buffer.mid(offset + 9, length - 9));
         }
 
-        buffer.remove(0, length);
+        m_buffer.remove(0, offset + length);
     }
 }
 
@@ -622,6 +652,7 @@ bool ZBoss::permitJoin(bool enabled)
 
     memset(&request, 0, sizeof(request));
     request.duration = enabled ? 0xF0 : 0x00;
+    request.significance = 0x01;
 
     if (networkAddress == PERMIT_JOIN_BROARCAST_ADDRESS && (!sendRequest(ZBOSS_ZDO_PERMIT_JOINING_REQ, QByteArray(reinterpret_cast <char*> (&request), sizeof(request))) || m_replyStatus))
     {
@@ -631,13 +662,18 @@ bool ZBoss::permitJoin(bool enabled)
 
     request.dstAddress = qToLittleEndian <quint16> (networkAddress);
 
-    if (!sendRequest(ZBOSS_ZDO_PERMIT_JOINING_REQ, QByteArray(reinterpret_cast <char*> (&request), sizeof(request))) || m_replyStatus)
+    if (!m_esp && (!sendRequest(ZBOSS_ZDO_PERMIT_JOINING_REQ, QByteArray(reinterpret_cast <char*> (&request), sizeof(request))) || m_replyStatus))
     {
         logWarning << "Permit join request failed";
         return false;
     }
 
     return true;
+}
+
+void ZBoss::resetManufacturerCode(void)
+{
+    setManufacturerCode(MANUFACTURER_CODE_NORDIC);
 }
 
 void ZBoss::serialError(QSerialPort::SerialPortError error)

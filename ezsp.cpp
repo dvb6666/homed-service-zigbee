@@ -24,7 +24,7 @@ static const uint16_t crcTable[256] =
     0xEF1F, 0xFF3E, 0xCF5D, 0xDF7C, 0xAF9B, 0xBFBA, 0x8FD9, 0x9FF8, 0x6E17, 0x7E36, 0x4E55, 0x5E74, 0x2E93, 0x3EB2, 0x0ED1, 0x1EF0
 };
 
-EZSP::EZSP(QSettings *config, QObject *parent) : Adapter(config, parent), m_timer(new QTimer(this)), m_version(0), m_errorCount(0)
+EZSP::EZSP(QSettings *config, QObject *parent) : Adapter(config, parent), m_timer(new QTimer(this)), m_version(0), m_reset(true), m_errorCount(0)
 {
     m_watchdog = config->value("zigbee/watchdog", true).toBool();
 
@@ -708,6 +708,7 @@ void EZSP::handleError(const QString &reason)
     m_errorReceived = true;
     emit dataReceived();
 
+    m_reset = true;
     reset();
 }
 
@@ -716,34 +717,31 @@ void EZSP::softReset(void)
     sendRequest(ASH_CONTROL_RST);
 }
 
-void EZSP::parseData(QByteArray &buffer)
+void EZSP::parseData(void)
 {
-    while (!buffer.isEmpty())
+    while (!m_buffer.isEmpty())
     {
         quint16 length, crc;
         QByteArray packet;
 
-        if (buffer.startsWith(QByteArray::fromHex("1ac102")) || buffer.startsWith(QByteArray::fromHex("1ac202")))
-            buffer.remove(0, 1);
-
-        if (buffer.length() < 4 || !buffer.contains(static_cast <char> (ASH_PACKET_FLAG)))
+        if (m_buffer.length() < 4 || !m_buffer.contains(static_cast <char> (ASH_PACKET_FLAG)))
             return;
 
-        length = static_cast <quint16> (buffer.indexOf(ASH_PACKET_FLAG));
-        logDebug(m_portDebug) << "Frame received:" << buffer.mid(0, length + 1).toHex(':');
+        length = static_cast <quint16> (m_buffer.indexOf(ASH_PACKET_FLAG));
+        logDebug(m_portDebug) << "Frame received:" << m_buffer.mid(0, length + 1).toHex(':');
 
         for (int i = 0; i < length; i++)
         {
-            if (buffer.at(i) == 0x11 || buffer.at(i) == 0x13)
+            if (m_buffer.at(i) == 0x11 || m_buffer.at(i) == 0x13)
                 continue;
 
-            if (buffer.at(i) != 0x7D)
+            if (m_buffer.at(i) != 0x7D)
             {
-                packet.append(buffer.at(i));
+                packet.append(m_buffer.at(i));
                 continue;
             }
 
-            switch (buffer.at(++i))
+            switch (m_buffer.at(++i))
             {
                 case 0x31: packet.append(0x11); break;
                 case 0x33: packet.append(0x13); break;
@@ -754,9 +752,10 @@ void EZSP::parseData(QByteArray &buffer)
 
                 default:
 
-                    if (buffer.at(i) != 0x11 && buffer.at(i) != 0x13)
+                    if (m_buffer.at(i) != 0x11 && m_buffer.at(i) != 0x13)
                     {
-                        handleError(QString("Frame %1 unstaffing failed at position %2").arg(QString(buffer.mid(0, length + 1).toHex(':'))).arg(i));
+                        handleError(QString("Frame %1 unstaffing failed at position %2").arg(QString(m_buffer.mid(0, length + 1).toHex(':'))).arg(i));
+                        m_buffer.clear();
                         return;
                     }
 
@@ -764,16 +763,20 @@ void EZSP::parseData(QByteArray &buffer)
             }
         }
 
+        if (m_reset && packet.contains(0x1A))
+            packet.remove(0, packet.indexOf(0x1A) + 1);
+
         memcpy(&crc, packet.constData() + packet.length() - 2, sizeof(crc));
 
         if (crc != getCRC(reinterpret_cast <quint8*> (packet.data()), packet.length() - 2))
         {
             handleError(QString("Packet %1 CRC mismatch").arg(QString(packet.toHex(':'))));
+            m_buffer.clear();
             return;
         }
 
         m_queue.enqueue(packet);
-        buffer.remove(0, length + 1);
+        m_buffer.remove(0, length + 1);
     }
 }
 
@@ -852,6 +855,7 @@ void EZSP::handleQueue(void)
         {
             m_sequenceId = 0;
             m_acknowledgeId = 0;
+            m_reset = false;
 
             if (!startCoordinator())
             {

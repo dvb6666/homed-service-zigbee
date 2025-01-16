@@ -325,7 +325,7 @@ private:
 
     QTimer *m_timer;
     quint8 m_version, m_stackStatus, m_sequenceId, m_acknowledgeId;
-    bool m_watchdog;
+    bool m_reset, m_watchdog;
 
     QByteArray m_replyData;
     quint8 m_errorCount;
@@ -348,7 +348,7 @@ private:
     void handleError(const QString &reason);
 
     void softReset(void) override;
-    void parseData(QByteArray &buffer) override;
+    void parseData(void) override;
     bool permitJoin(bool enabled) override;
 
 private slots:

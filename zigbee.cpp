@@ -880,9 +880,9 @@ bool ZigBee::groupRequest(const Endpoint &endpoint, quint16 groupId, bool remove
     }
     else
     {
+        quint16 data = qToLittleEndian(groupId);
         m_groupRequestFinished = false;
-        groupId = qToLittleEndian(groupId);
-        request = zclHeader(FC_CLUSTER_SPECIFIC, m_requestId, remove ? 0x03 : 0x00).append(reinterpret_cast <char*> (&groupId), sizeof(groupId)).append(remove ? 0 : 1, 0x00);
+        request = zclHeader(FC_CLUSTER_SPECIFIC, m_requestId, remove ? 0x03 : 0x00).append(reinterpret_cast <char*> (&data), sizeof(data)).append(remove ? 0 : 1, 0x00);
         name = QString("%1 group request").arg(remove ? "remove" : "add");
     }
 
@@ -1846,7 +1846,7 @@ void ZigBee::zdoMessageReveived(quint16 networkAddress, quint16 clusterId, const
                 break;
             }
 
-            interviewError(device, QString::asprintf("node descriptor response error %0x02x", response->status));
+            interviewError(device, QString::asprintf("node descriptor response error 0x%02x", response->status));
             break;
         }
 
@@ -1915,7 +1915,7 @@ void ZigBee::zdoMessageReveived(quint16 networkAddress, quint16 clusterId, const
                 break;
             }
 
-            interviewError(device, QString::asprintf("active endpoints response error %0x02x", response->status));
+            interviewError(device, QString::asprintf("active endpoints response error 0x%02x", response->status));
             break;
         }
 

@@ -156,74 +156,6 @@ Endpoint DeviceList::endpoint(const Device &device, quint8 endpointId)
     return it.value();
 }
 
-void DeviceList::identityHandler(const Device &device, QString &manufacturerName, QString &modelName)
-{
-    QList <QString> lumi =
-    {
-        "aqara",
-        "Aqara",
-        "XIAOMI"
-    };
-
-    QList <QString> orvibo =
-    {
-        "131c854783bc45c9b2ac58088d09571c",
-        "585fdfb8c2304119a2432e9845cf2623",
-        "52debf035a1b4a66af56415474646c02",
-        "75a4bfe8ef9c4350830a25d13e3ab068",
-        "b2e57a0f606546cd879a1a54790827d6",
-        "b7e305eb329f497384e966fe3fb0ac69",
-        "c670e231d1374dbc9e3c6a9fffbd0ae6",
-        "da2edf1ded0d44e1815d06f45ce02029",
-        "e70f96b3773a4c9283c6862dbafb6a99",
-        "fdd76effa0e146b4bdafa0c203a37192"
-    };
-
-    manufacturerName = device->manufacturerName();
-    modelName = device->modelName();
-
-    if (lumi.contains(manufacturerName))
-    {
-        manufacturerName = "LUMI";
-        return;
-    }
-
-    if (orvibo.contains(modelName))
-    {
-        manufacturerName = "ORVIBO";
-        return;
-    }
-
-    if (manufacturerName.contains("efekta", Qt::CaseInsensitive))
-    {
-        manufacturerName = "EFEKTA";
-        return;
-    }
-
-    if (manufacturerName == "GLEDOPTO" && modelName == "GL-C-007")
-    {
-        QMap <quint8, quint16> map;
-
-        for (auto it = device->endpoints().begin(); it != device->endpoints().end(); it++)
-            map.insert(it.key(), it.value()->deviceId());
-
-        if (map == QMap <quint8, quint16> {{0x0B, 0x0210}, {0x0D, 0x0210}} || map == QMap <quint8, quint16> {{0x0B, 0x0210}, {0x0C, 0x0102}, {0x0D, 0xE15E}})
-            modelName = "GL-C-007-1ID";
-        else if (map == QMap <quint8, quint16> {{0x0B, 0x0210}, {0x0D, 0xE15E}, {0x0F, 0x0100}})
-            modelName = "GL-C-007-2ID";
-        else if (map == QMap <quint8, quint16> {{0x0B, 0x0210}, {0x0D, 0xE15E}, {0x0F, 0x0220}} || map == QMap <quint8, quint16> {{0x0B, 0x0210}, {0x0C, 0x0102}, {0x0D, 0xE15E}, {0x0F, 0x0100}})
-            modelName = "GL-C-008-2ID";
-
-        return;
-    }
-
-    if (QRegExp("^TS\\d{3}[0-9F][AB]{0,1}$").exactMatch(modelName) || QRegExp("^_TZ[2,3,E]\\d{3}_\\S+$").exactMatch(manufacturerName) || manufacturerName.startsWith("_TYZB01_") || manufacturerName.startsWith("TUYA"))
-    {
-        modelName = manufacturerName;
-        manufacturerName = "TUYA";
-    }
-}
-
 void DeviceList::setupDevice(const Device &device)
 {
     Expose expose(new SensorObject("linkQuality"));
@@ -380,6 +312,86 @@ void DeviceList::setupDevice(const Device &device)
     device->endpoints().last()->exposes().append(expose);
 }
 
+void DeviceList::removeDevice(const Device &device)
+{
+    if (device->name() != device->ieeeAddress().toHex(':'))
+    {
+        device->setRemoved(true);
+        device->setInterviewStatus(InterviewStatus::NodeDescriptor);
+        return;
+    }
+
+    remove(device->ieeeAddress());
+}
+
+void DeviceList::identityHandler(const Device &device, QString &manufacturerName, QString &modelName)
+{
+    QList <QString> lumi =
+    {
+        "aqara",
+        "Aqara",
+        "XIAOMI"
+    };
+
+    QList <QString> orvibo =
+    {
+        "131c854783bc45c9b2ac58088d09571c",
+        "585fdfb8c2304119a2432e9845cf2623",
+        "52debf035a1b4a66af56415474646c02",
+        "75a4bfe8ef9c4350830a25d13e3ab068",
+        "b2e57a0f606546cd879a1a54790827d6",
+        "b7e305eb329f497384e966fe3fb0ac69",
+        "c670e231d1374dbc9e3c6a9fffbd0ae6",
+        "da2edf1ded0d44e1815d06f45ce02029",
+        "e70f96b3773a4c9283c6862dbafb6a99",
+        "fdd76effa0e146b4bdafa0c203a37192"
+    };
+
+    manufacturerName = device->manufacturerName();
+    modelName = device->modelName();
+
+    if (lumi.contains(manufacturerName))
+    {
+        manufacturerName = "LUMI";
+        return;
+    }
+
+    if (orvibo.contains(modelName))
+    {
+        manufacturerName = "ORVIBO";
+        return;
+    }
+
+    if (manufacturerName.contains("efekta", Qt::CaseInsensitive))
+    {
+        manufacturerName = "EFEKTA";
+        return;
+    }
+
+    if (manufacturerName == "GLEDOPTO" && modelName == "GL-C-007")
+    {
+        QMap <quint8, quint16> map;
+
+        for (auto it = device->endpoints().begin(); it != device->endpoints().end(); it++)
+            map.insert(it.key(), it.value()->deviceId());
+
+        if (map == QMap <quint8, quint16> {{0x0B, 0x0210}, {0x0D, 0x0210}} || map == QMap <quint8, quint16> {{0x0B, 0x0210}, {0x0C, 0x0102}, {0x0D, 0xE15E}})
+            modelName = "GL-C-007-1ID";
+        else if (map == QMap <quint8, quint16> {{0x0B, 0x0210}, {0x0D, 0xE15E}, {0x0F, 0x0100}})
+            modelName = "GL-C-007-2ID";
+        else if (map == QMap <quint8, quint16> {{0x0B, 0x0210}, {0x0D, 0xE15E}, {0x0F, 0x0220}} || map == QMap <quint8, quint16> {{0x0B, 0x0210}, {0x0C, 0x0102}, {0x0D, 0xE15E}, {0x0F, 0x0100}})
+            modelName = "GL-C-008-2ID";
+
+        return;
+    }
+
+    if (QRegExp("^TS\\d{3}[0-9F][AB]{0,1}$").exactMatch(modelName) || QRegExp("^_TZ[2,3,E]\\d{3}_\\S+$").exactMatch(manufacturerName) || manufacturerName.startsWith("_TYZB01_") || manufacturerName.startsWith("TUYA"))
+    {
+        modelName = manufacturerName;
+        manufacturerName = "TUYA";
+    }
+}
+
 void DeviceList::setupEndpoint(const Endpoint &endpoint, const QJsonObject &json, bool multiple)
 {
     const Device &device = endpoint->device();
@@ -430,7 +442,7 @@ void DeviceList::setupEndpoint(const Endpoint &endpoint, const QJsonObject &json
             for (auto it = options.begin(); it != options.end(); it++)
             {
                 QMap <QString, QVariant> option = it.value().toMap();
-                Property property(new PropertiesCustom::Attribute(it.key(), option.value("type").toString(), static_cast <quint16> (option.value("clusterId").toInt()), static_cast <quint16> (option.value("attributeId").toInt()), static_cast <quint8> (option.value("dataType").toInt()), option.value("divider", 1).toDouble()));
+                Property property(new PropertiesCustom::Attribute(it.key(), option.value("type").toString(), static_cast <quint16> (option.value("clusterId").toInt()), static_cast <quint16> (option.value("attributeId").toInt()), static_cast <quint8> (option.value("dataType").toInt()), option.value("divider").toDouble()));
                 property->setParent(endpoint.data());
                 property->setMultiple(multiple);
                 endpoint->properties().append(property);
@@ -466,7 +478,7 @@ void DeviceList::setupEndpoint(const Endpoint &endpoint, const QJsonObject &json
                 if (!option.value("action").toBool())
                     continue;
 
-                action = Action(new ActionsCustom::Attribute(it.key(), option.value("type").toString(), static_cast <quint16> (option.value("clusterId").toInt()), static_cast <quint16> (option.value("manufacturerCode").toInt()), static_cast <quint16> (option.value("attributeId").toInt()), static_cast <quint8> (option.value("dataType").toInt()), option.value("divider", 1).toDouble()));
+                action = Action(new ActionsCustom::Attribute(it.key(), option.value("type").toString(), static_cast <quint16> (option.value("clusterId").toInt()), static_cast <quint16> (option.value("manufacturerCode").toInt()), static_cast <quint16> (option.value("attributeId").toInt()), static_cast <quint8> (option.value("dataType").toInt()), option.value("divider").toDouble()));
                 action->setParent(endpoint.data());
                 endpoint->actions().append(action);
             }
@@ -521,7 +533,7 @@ void DeviceList::setupEndpoint(const Endpoint &endpoint, const QJsonObject &json
 
     for (auto it = exposes.begin(); it != exposes.end(); it++)
     {
-        QString exposeName = it->toString(), itemName = exposeName.split('_').value(0), optionName = multiple ? QString("%1_%2").arg(itemName, QString::number(endpoint->id())) : itemName;
+        QString exposeName = it->toString(), itemName = exposeName.split('_').value(0), optionName = multiple ? QString("%1_%2").arg(itemName, QString::number(endpoint->id())) : exposeName;
         QMap <QString, QVariant> option = m_exposeOptions.value(itemName).toMap();
         Expose expose;
         int type;
@@ -577,13 +589,14 @@ void DeviceList::recognizeDevice(const Device &device)
             {
                 case CLUSTER_POWER_CONFIGURATION:
 
-                    if (!device->batteryPowered())
-                        break;
+                    if (device->batteryPowered())
+                    {
+                        it.value()->properties().append(Property(new Properties::BatteryPercentage));
+                        it.value()->bindings().append(Binding(new Bindings::Battery));
+                        it.value()->reportings().append(Reporting(new Reportings::BatteryPercentage));
+                        it.value()->exposes().append(Expose(new SensorObject("battery")));
+                    }
 
-                    it.value()->properties().append(Property(new Properties::BatteryPercentage));
-                    it.value()->bindings().append(Binding(new Bindings::Battery));
-                    it.value()->reportings().append(Reporting(new Reportings::BatteryPercentage));
-                    it.value()->exposes().append(Expose(new SensorObject("battery")));
                     break;
 
                 case CLUSTER_TEMPERATURE_CONFIGURATION:
@@ -655,7 +668,7 @@ void DeviceList::recognizeDevice(const Device &device)
                     it.value()->reportings().append(Reporting(new Reportings::Thermostat));
                     it.value()->exposes().append(Expose(new ThermostatObject));
                     device->options().insert(QString("targetTemperature_%1").arg(it.key()), QMap <QString, QVariant> {{"min", 7}, {"max", 30}, {"step", 0.1}, {"unit", "°C"}});
-                    device->options().insert(QString("systemMode_%1").arg(it.key()), QMap <QString, QVariant> {{"enum", QVariant(QList <QString> {"off", "heat"})}});
+                    device->options().insert(QString("systemMode_%1").arg(it.key()), QMap <QString, QVariant> {{"enum", QVariant(QList <QString> {"off", "auto", "heat"})}});
                     break;
 
                 case CLUSTER_FAN_CONTROL:
@@ -706,7 +719,6 @@ void DeviceList::recognizeDevice(const Device &device)
                         break;
                     }
 
-                    it.value()->properties().append(Property(new Properties::ColorAction));
                     break;
 
                 case CLUSTER_ILLUMINANCE_MEASUREMENT:
@@ -932,18 +944,6 @@ void DeviceList::recognizeMultipleExpose(const Device &device, const Endpoint &e
             }
         }
     }
-}
-
-void DeviceList::removeDevice(const Device &device)
-{
-    if (device->name() != device->ieeeAddress().toHex(':'))
-    {
-        device->setRemoved(true);
-        device->setInterviewStatus(InterviewStatus::NodeDescriptor);
-        return;
-    }
-
-    remove(device->ieeeAddress());
 }
 
 void DeviceList::unserializeDevices(const QJsonArray &devices)

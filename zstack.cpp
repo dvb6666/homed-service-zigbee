@@ -285,7 +285,6 @@ bool ZStack::writeConfiguration(quint16 id, const QByteArray &data)
 bool ZStack::startCoordinator(void)
 {
     zstackVersionStruct version;
-    zstackAddGroupStruct request;
 
     if (!sendRequest(ZSTACK_SYS_VERSION))
     {
@@ -485,13 +484,6 @@ bool ZStack::startCoordinator(void)
         return false;
     }
 
-    request.endpointId = 0xF2;
-    request.groupId = qToLittleEndian <quint16> (GREEN_POWER_GROUP);
-    request.nameLength = 0x00;
-
-    if (!sendRequest(ZSTACK_ZDO_ADD_GROUP, QByteArray(reinterpret_cast <char*> (&request), sizeof(request))) || m_replyStatus)
-        logWarning << "Add GP group request failed";
-
     if (!sendRequest(ZSTACK_SYS_SET_TX_POWER, QByteArray(1, static_cast <char> (m_power))) || m_replyStatus)
         logWarning << "Set TX power request failed";
 
@@ -514,40 +506,40 @@ void ZStack::softReset(void)
     sendRequest(ZSTACK_SYS_RESET_REQ, QByteArray(1, 0x01));
 }
 
-void ZStack::parseData(QByteArray &buffer)
+void ZStack::parseData(void)
 {
-    while (!buffer.isEmpty())
+    while (!m_buffer.isEmpty())
     {
         quint8 length, fcs = 0;
 
-        if (!buffer.at(0))
-            buffer.remove(0, 1);
+        if (!m_buffer.at(0))
+            m_buffer.remove(0, 1);
 
-        if (buffer.length() < 5 || buffer.at(0) != static_cast <char> (ZSTACK_PACKET_FLAG))
+        if (m_buffer.at(0) != static_cast <char> (ZSTACK_PACKET_FLAG) || m_buffer.length() < 5) // TODO: use offset
         {
-            buffer.clear();
-            break;
+            m_buffer.clear();
+            return;
         }
 
-        length = static_cast <quint8> (buffer.at(1));
+        length = static_cast <quint8> (m_buffer.at(1));
 
-        if (buffer.length() < length + 5)
+        if (m_buffer.length() < length + 5)
             break;
 
-        logDebug(m_portDebug) << "Frame received:" << buffer.mid(0, length + 5).toHex(':');
+        logDebug(m_portDebug) << "Frame received:" << m_buffer.mid(0, length + 5).toHex(':');
 
         for (quint8 i = 1; i < length + 4; i++)
-            fcs ^= buffer.at(i);
+            fcs ^= m_buffer.at(i);
 
-        if (fcs != static_cast <quint8> (buffer.at(length + 4)))
+        if (fcs != static_cast <quint8> (m_buffer.at(length + 4)))
         {
-            logWarning << "Frame" << buffer.mid(0, length + 5).toHex(':') << "FCS mismatch";
-            buffer.clear();
-            break;
+            logWarning << "Frame" << m_buffer.mid(0, length + 5).toHex(':') << "FCS mismatch";
+            m_buffer.clear();
+            return;
         }
 
-        m_queue.enqueue(buffer.mid(2, length + 2));
-        buffer.remove(0, length + 5);
+        m_queue.enqueue(m_buffer.mid(2, length + 2));
+        m_buffer.remove(0, length + 5);
     }
 }
 

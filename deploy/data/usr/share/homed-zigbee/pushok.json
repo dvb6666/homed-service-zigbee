@@ -1,0 +1,72 @@
+{
+  "PushOk Hardware":
+  [
+    {
+      "description":    "PushOk Hardware Garden Valve POK006",
+      "modelNames":     ["POK006"],
+      "properties":     ["batteryPercentage", "status", "customAttributes"],
+      "actions":        ["status", "customAttributes"],
+      "exposes":        ["battery", "lock", "stallTime", "valveStatus"],
+      "options":        {
+                          "customAttributes":
+                          {
+                            "valveStatus":  {"type": "enum",  "clusterId": 18, "attributeId": 85, "dataType": 33},
+                            "stallTime":    {"type": "value", "clusterId": 20, "attributeId": 85, "dataType": 33, "action": true}
+                          },
+                          "valveStatus": {"type": "sensor", "enum": ["closed", "open", "moving", "stuck"], "icon": "mdi:valve"},
+                          "stallTime": {"type": "number", "min": 0, "max": 60, "unit": "s", "icon": "mdi:timer"},
+                          "lock": "valve"
+                        }
+    },
+    {
+      "description":    "PushOk Hardware Thermostat Relay POK008",
+      "modelNames":     ["POK008"],
+      "properties":     ["batteryPercentage", "status", "temperature", "customAttributes"],
+      "actions":        ["status", "customAttributes"],
+      "exposes":        ["battery", "switch", "thermostat", "hysteresis"],
+      "options":        {
+                          "customAttributes":
+                          {
+                            "targetTemperature":  {"type": "value", "clusterId": 13, "attributeId": 85, "dataType": 57, "action": true},
+                            "hysteresis":         {"type": "value", "clusterId": 14, "attributeId": 85, "dataType": 57, "action": true},
+                            "systemMode":         {"type": "enum",  "clusterId": 19, "attributeId": 85, "dataType": 33, "action": true}
+                          },
+                          "targetTemperature": {"min": -45, "max": 125},
+                          "hysteresis": {"min": 0.1, "max": 10, "step": 0.1},
+                          "systemMode": {"enum": ["off", "heat", "cool"]}
+                        }
+    },
+    {
+      "description":    "PushOk Hardware Voltage Monitor POK009",
+      "modelNames":     ["POK009"],
+      "properties":     ["batteryPercentage", "customAttributes"],
+      "actions":        ["customAttributes"],
+      "exposes":        ["battery", "voltage", "voltageLow", "voltageType", "threshold"],
+      "options":        {
+                          "customAttributes":
+                          {
+                            "voltage":      {"type": "value", "clusterId": 12, "attributeId": 85, "dataType": 57},
+                            "voltageLow":   {"type": "enum",  "clusterId": 15, "attributeId": 85, "dataType": 16},
+                            "voltageType":  {"type": "enum",  "clusterId": 19, "attributeId": 85, "dataType": 33, "action": true},
+                            "threshold":    {"type": "value", "clusterId": 20, "attributeId": 85, "dataType": 33, "action": true}
+                          },
+                          "voltageLow": {"type": "binary", "enum": [true, false], "icon": "mdi:bell"},
+                          "voltageType": {"type": "select", "enum": ["AC", "DC"]},
+                          "threshold": {"min": 4, "max": 340, "unit": "V", "icon": "mdi:bell"}
+                        }
+    },
+    {
+      "description":    "PushOk Hardware Temperature and Humidity/Moisture Sensor POK002, POK005 or POK007",
+      "modelNames":     ["POK002", "POK005", "POK007"],
+      "properties":     ["batteryPercentage", "temperature", "humidity"],
+      "exposes":        ["battery", "temperature", "humidity"]
+    },
+    {
+      "description":    "PushOk Hardware Temperature and Contact Sensor POK010",
+      "modelNames":     ["POK010"],
+      "properties":     ["batteryPercentage", "temperature", "customAttributes"],
+      "exposes":        ["battery", "temperature", "contact"],
+      "options":        {"customAttributes": {"contact": {"type": "bool", "clusterId": 15, "attributeId": 85, "dataType": 16}}}
+    }
+  ]
+}

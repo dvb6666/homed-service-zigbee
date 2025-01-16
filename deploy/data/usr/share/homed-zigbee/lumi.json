@@ -205,10 +205,17 @@
     {
       "description":    "Aqara E1 1-Channel Wall Switch QBKG38LM or QBKG40LM",
       "modelNames":     ["lumi.switch.b1nc01", "lumi.switch.b1lc04"],
-      "properties":     ["status", "lumiData", "lumiSwitchAction"],
+      "properties":     ["status", "lumiData"],
       "actions":        ["status", "lumiIndicatorMode", "lumiSwitchMode", "lumiSwitchStatusMemory"],
       "exposes":        ["switch", "action", "temperature", "indicatorMode", "switchMode", "statusMemory"],
-      "options":        {"action": {"enum": ["singleClick", "doubleClick"]}, "temperature": {"diagnostic": true}, "indicatorMode": {"enum": ["default", "inverted"]}, "switchMode": {"enum": ["decoupled", "relay"]}}
+      "options":        {"temperature": {"diagnostic": true}, "indicatorMode": {"enum": ["default", "inverted"]}, "switchMode": {"enum": ["decoupled", "relay"]}},
+      "endpointId":     1
+    },
+    {
+      "modelNames":     ["lumi.switch.b1nc01", "lumi.switch.b1lc04"],
+      "properties":     ["lumiSwitchAction"],
+      "options":        {"action": {"enum": ["singleClick", "doubleClick"]}},
+      "endpointId":     41
     },
     {
       "description":    "Aqara E1 2-Channel Wall Switch QBKG39LM or QBKG41LM",
@@ -237,6 +244,34 @@
       "exposes":        ["action"],
       "options":        {"action": {"enum": ["singleClick", "doubleClick"]}},
       "endpointId":     [41, 42, 51]
+    },
+    {
+      "description":    "Aqara E1 3-Channel Wall Switch ZNQBKG31LM",
+      "modelNames":     ["lumi.switch.acn040"],
+      "options":        {"endpointName": {"1": "Left", "2": "Center", "3": "Right", "41": "Left", "42": "Center", "43": "Right", "51": "L+C", "52": "L+R", "53": "C+R", "61": "L+C+R"}}
+    },
+    {
+      "modelNames":     ["lumi.switch.acn040"],
+      "properties":     ["lumiData"],
+      "actions":        ["lumiIndicatorMode", "lumiSwitchStatusMemory"],
+      "exposes":        ["temperature", "indicatorMode", "statusMemory"],
+      "options":        {"temperature": {"diagnostic": true}, "indicatorMode": {"enum": ["default", "inverted"]}},
+      "endpointId":     1
+    },
+    {
+      "modelNames":     ["lumi.switch.acn040"],
+      "properties":     ["status", "lumiData"],
+      "actions":        ["status", "lumiSwitchMode"],
+      "exposes":        ["switch", "switchMode"],
+      "options":        {"switchMode": {"enum": ["decoupled", "relay"]}},
+      "endpointId":     [1, 2, 3]
+    },
+    {
+      "modelNames":     ["lumi.switch.acn040"],
+      "properties":     ["lumiSwitchAction"],
+      "exposes":        ["action"],
+      "options":        {"action": {"enum": ["singleClick", "doubleClick"]}},
+      "endpointId":     [41, 42, 43, 51, 52, 53, 61]
     },
     {
       "description":    "Aqara T1 1-Channel Relay DLKZMK11LM or SSM-U01",
@@ -360,6 +395,13 @@
       "options":        {"logicalType": 2, "powerSource": 3}
     },
     {
+      "description":    "Aqara Gas Detector JT-BZ-01AQ/A",
+      "modelNames":     ["lumi.sensor_gas.acn02"],
+      "properties":     ["lumiData"],
+      "exposes":        ["gas", "gasConcentration"],
+      "options":        {"gasConcentration": {"type": "sensor", "unit": "%"}}
+    },
+    {
       "description":    "Xiaomi Smoke Detector JTYJ-GD-01LM/BW",
       "modelNames":     ["lumi.sensor_smoke"],
       "properties":     ["lumiBasic", "iasSmoke"],
@@ -371,7 +413,7 @@
       "modelNames":     ["lumi.sensor_smoke.acn03"],
       "properties":     ["batteryVoltage", "lumiData"],
       "exposes":        ["battery", "smoke", "smokeConcentration"],
-      "options":        {"smokeConcentration": {"unit": "dB/m"}}
+      "options":        {"smokeConcentration": {"type": "sensor", "unit": "dB/m"}}
     },
     {
       "description":    "Xiaomi Door and Window Sensor MCCGQ01LM",
@@ -385,6 +427,12 @@
       "properties":     ["lumiBasic", "lumiContact"],
       "exposes":        ["battery", "contact", "temperature"],
       "options":        {"temperature": {"diagnostic": true}}
+    },
+    {
+      "description":    "Xiaomi Door and Window Sensor MCCGQ12LM",
+      "modelNames":     ["lumi.magnet.agl02"],
+      "properties":     ["lumiBasic", "iasContact"],
+      "exposes":        ["battery", "contact"]
     },
     {
       "description":    "Xiaomi Motion Sensor RTCGQ01LM",
@@ -587,13 +635,25 @@
       "endpointId":     [1, 2, 3]
     },
     {
+      "description":    "Aqara E1 1-Key Wireless Switch WXKG16LM",
+      "modelNames":     ["lumi.remote.acn003"],
+      "properties":     ["lumiData", "lumiSwitchAction", "customAttributes"],
+      "actions":        ["customAttributes"],
+      "exposes":        ["battery", "switchType", "action"],
+      "options":        {
+                          "customAttributes": {"switchType": {"type": "enum", "clusterId": 64704, "manufacturerCode": 4447, "attributeId": 293, "dataType": 32, "action": true}},
+                          "switchType": {"enum": {"1": "momentary", "2": "multifunction"}},
+                          "action": {"enum": ["singleClick", "doubleClick", "hold"]}
+                        }
+    },
+    {
       "description":    "Aqara E1 2-Key Wireless Switch WXKG17LM",
       "modelNames":     ["lumi.remote.acn004"],
       "options":        {"endpointName": {"1": "Left", "2": "Right", "3": "Both"}}
     },
     {
       "modelNames":     ["lumi.remote.acn004"],
-      "properties":     ["customAttributes"],
+      "properties":     ["lumiData", "customAttributes"],
       "actions":        ["customAttributes"],
       "exposes":        ["battery", "switchType"],
       "options":        {

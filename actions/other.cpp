@@ -6,7 +6,6 @@ QByteArray ActionsCustom::Attribute::request(const QString &, const QVariant &da
 {
     QList <QString> types = {"bool", "value", "enum"}; // TODO: refactor this
     QVariant value;
-    qint64 buffer;
 
     switch (types.indexOf(m_type))
     {
@@ -25,6 +24,24 @@ QByteArray ActionsCustom::Attribute::request(const QString &, const QVariant &da
         }
     }
 
-    buffer = qToLittleEndian <qint64> (value.toDouble());
-    return writeAttribute(m_dataType, &buffer, zclDataSize(m_dataType));
+    switch (m_dataType)
+    {
+        case DATA_TYPE_SINGLE_PRECISION:
+        {
+            float number = qToLittleEndian(value.toFloat());
+            return writeAttribute(m_dataType, &number, sizeof(number));
+        }
+
+        case DATA_TYPE_DOUBLE_PRECISION:
+        {
+            double number = qToLittleEndian(value.toDouble());
+            return writeAttribute(m_dataType, &number, sizeof(number));
+        }
+
+        default:
+        {
+            qint64 number = qToLittleEndian <qint64> (value.toDouble());
+            return writeAttribute(m_dataType, &number, zclDataSize(m_dataType));
+        }
+    }
 }

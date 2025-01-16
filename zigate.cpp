@@ -326,13 +326,16 @@ bool ZiGate::startCoordinator(bool clear)
     {
         zigateAddGroupStruct request;
 
+        if (m_multicast.at(i) == GREEN_POWER_GROUP)
+            continue;
+
         request.addressMode = ADDRESS_MODE_16_BIT;
         request.address = 0x0000;
         request.srcEndpointId = 0x01;
         request.dstEndpointId = 0x01;
         request.groupId = qToBigEndian(m_multicast.at(i));
 
-        if (sendRequest(ZIGATE_ADD_GROUP, QByteArray(reinterpret_cast <char*> (&request), sizeof(request))) || !m_replyStatus)
+        if (sendRequest(ZIGATE_ADD_GROUP, QByteArray(reinterpret_cast <char*> (&request), sizeof(request))) && !m_replyStatus)
             continue;
 
         logWarning << "Add group" << QString::asprintf("0x%04x", m_multicast.at(i)) << "request failed";
@@ -365,24 +368,27 @@ void ZiGate::softReset(void)
     sendRequest(ZIGATE_RESET);
 }
 
-void ZiGate::parseData(QByteArray &buffer)
+void ZiGate::parseData(void)
 {
-    while (!buffer.isEmpty())
+    while (!m_buffer.isEmpty())
     {
-        int length = buffer.indexOf(0x03);
+        int length = m_buffer.indexOf(0x03);
         QByteArray frame, packet;
 
-        if (!buffer.startsWith(0x01) || length < 6)
+        if (m_buffer.at(0) != 0x01 || length < 6) // TODO: use offset
+        {
+            m_buffer.clear();
             return;
+        }
 
-        logDebug(m_portDebug) << "Frame received:" << buffer.mid(0, length + 1).toHex(':');
-        frame = buffer.mid(1, length - 1);
+        logDebug(m_portDebug) << "Frame received:" << m_buffer.mid(0, length + 1).toHex(':');
+        frame = m_buffer.mid(1, length - 1);
 
         for (int i = 0; i < frame.length(); i++)
             packet.append(1, frame.at(i) == 0x02 ? frame.at(++i) ^ 0x10 : frame.at(i));
 
         m_queue.enqueue(packet);
-        buffer.remove(0, length + 1);
+        m_buffer.remove(0, length + 1);
     }
 }
 

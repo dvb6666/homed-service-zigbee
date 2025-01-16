@@ -197,12 +197,13 @@ void PropertiesTUYA::HolidayThermostatProgram::update(quint8 dataPoint, const QV
 
 void PropertiesTUYA::DailyThermostatProgram::update(quint8 dataPoint, const QVariant &data)
 {
+    QList <QVariant> list = option("prorgamDataPoints").toList();
     QMap <QString, QVariant> map = m_value.toMap();
 
-    if (dataPoint >= 0x1C && dataPoint <= 0x22)
+    if (list.contains(dataPoint))
     {
         QList <QString> types = {"monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"};
-        QString type = types.value(dataPoint - 0x1C);
+        QString type = types.value(list.indexOf(dataPoint));
         QByteArray program = data.toByteArray().mid(1);
 
         meta().insert(QString("%1Program").arg(type), true);
@@ -266,11 +267,11 @@ void PropertiesTUYA::CoverSwitch::parseAttribte(quint16, quint16 attributeId, co
     {
         case 0xF000:
 
-            switch (data.at(0))
+            switch (static_cast <quint8> (data.at(0)))
             {
-                case 0: map.insert("event", option("invertCover").toBool() ? "close" : "open"); break;
-                case 1: map.insert("event", "stop"); break;
-                case 2: map.insert("event", option("invertCover").toBool() ? "open" : "close"); break;
+                case 0x00: map.insert("event", option("invertCover").toBool() ? "close" : "open"); break;
+                case 0x01: map.insert("event", "stop"); break;
+                case 0x02: map.insert("event", option("invertCover").toBool() ? "open" : "close"); break;
             }
 
             break;
@@ -296,7 +297,7 @@ void PropertiesTUYA::ButtonAction::parseCommand(quint16, quint8 commandId, const
     {
         case 0xFC:
 
-            switch (payload.at(0))
+            switch (static_cast <quint8> (payload.at(0)))
             {
                 case 0x00: m_value = "rotateRight"; break;
                 case 0x01: m_value = "rotateLeft"; break;
@@ -306,7 +307,7 @@ void PropertiesTUYA::ButtonAction::parseCommand(quint16, quint8 commandId, const
 
         case 0xFD:
 
-            switch (payload.at(0))
+            switch (static_cast <quint8> (payload.at(0)))
             {
                 case 0x00: m_value = "singleClick"; break;
                 case 0x01: m_value = "doubleClick"; break;

@@ -16,7 +16,6 @@ void PropertyObject::registerMetaTypes(void)
     qRegisterMetaType <Properties::AnalogInput>                     ("analogInputProperty");
     qRegisterMetaType <Properties::AnalogOutput>                    ("analogOutputProperty");
     qRegisterMetaType <Properties::CoverPosition>                   ("coverPositionProperty");
-    qRegisterMetaType <Properties::CoverTilt>                       ("coverTiltProperty");
     qRegisterMetaType <Properties::Thermostat>                      ("thermostatProperty");
     qRegisterMetaType <Properties::ColorHS>                         ("colorHSProperty");
     qRegisterMetaType <Properties::ColorXY>                         ("colorXYProperty");
@@ -54,6 +53,7 @@ void PropertyObject::registerMetaTypes(void)
     qRegisterMetaType <PropertiesIAS::Smoke>                        ("iasSmokeProperty");
     qRegisterMetaType <PropertiesIAS::WaterLeak>                    ("iasWaterLeakProperty");
     qRegisterMetaType <PropertiesIAS::Rain>                         ("iasRainProperty");
+    qRegisterMetaType <PropertiesIAS::ContolAction>                 ("iasContolActionProperty");
 
     qRegisterMetaType <PropertiesLUMI::Data>                        ("lumiDataProperty");
     qRegisterMetaType <PropertiesLUMI::Basic>                       ("lumiBasicProperty");

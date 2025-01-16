@@ -1,4 +1,17 @@
 {
+  "Bacchus":
+  [
+    {
+      "description":    "MODKAM Soil Moisture Sensor with Bacchus Firmware",
+      "modelNames":     ["Flower_sensor_v2a"],
+      "properties":     ["batteryPercentage", "illuminance", "temperature", "humidity"],
+      "bindings":       ["battery", "illuminance", "temperature", "humidity"],
+      "reportings":     ["batteryPercentage", "illuminance", "temperature", "humidity"],
+      "exposes":        ["battery", "illuminance", "temperature", "humidity"],
+      "options":        {"illuminance": {"raw": true}}
+    }
+  ],
+
   "BYUN":
   [
     {
@@ -120,6 +133,34 @@
       "bindings":       ["thermostat"],
       "reportings":     ["thermostat"],
       "endpointId":     3
+    },
+    {
+      "description":    "Lytko Themostat L101Ze-SBN",
+      "modelNames":     ["L101Ze-SBN"],
+      "exposes":        ["thermostat", "childLock", "sensorType", "temperatureOffset", "hysteresis"],
+      "options":        {
+                          "customAttributes_3": {"sensorType": {"type": "enum", "clusterId": 513, "manufacturerCode": 30583, "attributeId": 65280, "dataType": 48, "action": true}},
+                          "systemMode": {"enum": ["off", "heat"]},
+                          "targetTemperature": {"min": 15, "max": 35, "step": 0.5},
+                          "temperatureOffset": {"min": -2.5, "max": 2.5, "step": 0.1},
+                          "hysteresis": {"min": 1, "max": 2.5, "step": 0.1},
+                          "sensorType": {"enum": ["3K3", "5K", "6K8", "10K", "12K", "14K8", "15K", "20K", "33K", "47K"]},
+                          "runningStatus": true
+                        }
+    },
+    {
+      "modelNames":     ["L101Ze-SBN"],
+      "properties":     ["childLock"],
+      "actions":        ["childLock"],
+      "endpointId":     1
+    },
+    {
+      "modelNames":     ["L101Ze-SBN"],
+      "properties":     ["thermostat", "customAttributes"],
+      "actions":        ["thermostat", "customAttributes"],
+      "bindings":       ["thermostat"],
+      "reportings":     ["thermostat"],
+      "endpointId":     3
     }
   ],
 
@@ -225,6 +266,19 @@
     }
   ],
 
+  "Sprut.device":
+  [
+      {
+        "description":    "Drivent Smart Window Driver",
+        "modelNames":     ["Drivent"],
+        "properties":     ["coverPosition"],
+        "actions":        ["coverStatus", "coverPosition"],
+        "bindings":       ["cover"],
+        "reportings":     ["coverPosition"],
+        "exposes":        ["cover"]
+      }
+  ],
+
   "Sunricher":
   [
     {
@@ -292,6 +346,30 @@
     }
   ],
 
+  "Tuya":
+  [
+    {
+      "description":    "TUYA Temperature and Humidity Sensor with PVVX Firmware",
+      "modelNames":     ["TH03Z-bz", "TH03Z-z", "TS0201-bz", "TS0201-z", "ZTH01-bz", "ZTH01-z", "ZTH02-bz", "ZTH02-z"],
+      "properties":     ["batteryPercentage", "temperature", "humidity", "customAttributes"],
+      "actions":        ["customAttributes"],
+      "bindings":       ["battery", "temperature", "humidity"],
+      "reportings":     ["batteryPercentage", "temperature", "humidity"],
+      "exposes":        ["battery", "temperature", "humidity", "readInterval", "temperatureOffset", "humidityOffset"],
+      "options":        {
+                          "customAttributes":
+                          {
+                            "temperatureOffset":  {"type": "value", "clusterId": 516, "attributeId": 256, "dataType": 41, "divider": 100, "action": true},
+                            "humidityOffset":     {"type": "value", "clusterId": 516, "attributeId": 257, "dataType": 41, "divider": 100, "action": true},
+                            "readInterval":       {"type": "value", "clusterId": 516, "attributeId": 263, "dataType": 32, "action": true}
+                          },
+                          "temperatureOffset": {"min": -10, "max": 10, "step": 0.1},
+                          "humidityOffset": {"min": -50, "max": 50},
+                          "readInterval": {"min": 3, "max": 255}
+                        }
+    }
+  ],
+
   "Xiaomi":
   [
     {
@@ -327,8 +405,8 @@
                           "customAttributes":
                           {
                             "showSmiley":         {"type": "enum",  "clusterId": 516, "attributeId": 2,   "dataType": 48, "action": true},
-                            "temperatureOffset":  {"type": "value", "clusterId": 516, "attributeId": 256, "dataType": 41, "divider": 10, "action": true},
-                            "humidityOffset":     {"type": "value", "clusterId": 516, "attributeId": 257, "dataType": 41, "divider": 10, "action": true},
+                            "temperatureOffset":  {"type": "value", "clusterId": 516, "attributeId": 256, "dataType": 41, "divider": 100, "action": true},
+                            "humidityOffset":     {"type": "value", "clusterId": 516, "attributeId": 257, "dataType": 41, "divider": 100, "action": true},
                             "enableDisplay":      {"type": "enum",  "clusterId": 516, "attributeId": 262, "dataType": 48, "action": true},
                             "readInterval":       {"type": "value", "clusterId": 516, "attributeId": 263, "dataType": 32, "action": true}
                           },

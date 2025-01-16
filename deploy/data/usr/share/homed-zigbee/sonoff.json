@@ -28,7 +28,7 @@
     },
     {
       "description":    "Sonoff Door and Window Sensor SNZB-04 or SNZB-04P",
-      "modelNames":     ["DS01", "SNZB-04P"],
+      "modelNames":     ["DS01", "SNZB-04", "SNZB-04P"],
       "properties":     ["batteryPercentage", "iasContact"],
       "bindings":       ["battery"],
       "reportings":     ["batteryPercentage"],
@@ -59,14 +59,6 @@
                           "occupancyTimeout": {"min": 5, "max": 60},
                           "illumination": {"enum": ["dim", "bright"]}
                         }
-    },
-    {
-      "description":    "Sonoff Water Leak Sensor SNZB-05P",
-      "modelNames":     ["SNZB-05P"],
-      "properties":     ["batteryPercentage", "iasWaterLeak"],
-      "bindings":       ["battery"],
-      "reportings":     ["batteryPercentage"],
-      "exposes":        ["battery", "waterLeak", "batteryLow"]
     },
     {
       "description":    "Sonoff Wireless Button SNZB-01 or SNZB-01P",
@@ -104,6 +96,33 @@
       "exposes":        ["switch", "powerOnStatus"]
     },
     {
+      "description":    "Sonoff 1-Channel Relay ZBMINI-R2",
+      "modelNames":     ["ZBMINIR2"],
+      "properties":     ["status", "powerOnStatus", "customAttributes", "customCommands"],
+      "actions":        ["status", "powerOnStatus", "customAttributes"],
+      "bindings":       ["status"],
+      "reportings":     ["status"],
+      "exposes":        ["switch", "powerOnStatus", "switchType", "switchMode", "action"],
+      "options":        {
+                          "customAttributes":
+                          {
+                            "switchType": {"type": "enum", "clusterId": 64529, "attributeId": 22, "dataType": 32, "action": true},
+                            "switchMode": {"type": "enum", "clusterId": 64529, "attributeId": 23, "dataType": 16, "action": true}
+                          },
+                          "customCommands": {"action": {"clusterId": 6}},
+                          "switchType": {"enum": ["toggle", "momentary"]},
+                          "switchMode": {"enum": ["relay", "decoupled"]},
+                          "action": {"enum": {"2": "toggle"}}
+                        }
+    },
+    {
+      "description":    "Sonoff 16A Smart Plug S26R2ZB",
+      "modelNames":     ["S26R2ZB"],
+      "properties":     ["status"],
+      "actions":        ["status"],
+      "exposes":        ["switch"]
+    },
+    {
       "description":    "Sonoff Human Presense Sensor SNZB-06P",
       "modelNames":     ["SNZB-06P"],
       "properties":     ["occupancy", "customAttributes"],
@@ -120,6 +139,14 @@
                           "sensitivityMode": {"enum": {"1": "low", "2": "medium", "3": "high"}},
                           "illumination": {"enum": ["dim", "bright"]}
                         }
+    },
+    {
+      "description":    "Sonoff Water Leak Sensor SNZB-05P",
+      "modelNames":     ["SNZB-05P"],
+      "properties":     ["batteryPercentage", "iasWaterLeak"],
+      "bindings":       ["battery"],
+      "reportings":     ["batteryPercentage"],
+      "exposes":        ["battery", "waterLeak", "batteryLow"]
     },
     {
       "description":    "Sonoff Temperature and Humidity Sensor SNZB-02D",
