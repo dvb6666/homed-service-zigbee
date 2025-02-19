@@ -1,8 +1,7 @@
 #ifndef ZBOSS_H
 #define ZBOSS_H
 
-#define ZBOSS_REQUEST_TIMEOUT                           2000
-#define ZBOSS_RESET_DELAY                               2000
+#define ZBOSS_RESET_DELAY                               5000
 
 #define ZBOSS_SIGNATURE                                 0xDEAD
 #define ZBOSS_PROTOCOL_VERSION                          0x00
@@ -232,7 +231,7 @@ public:
 private:
 
     QTimer *m_timer;
-    bool m_clear, m_esp;
+    bool m_clear, m_check, m_esp;
 
     quint16 m_command;
     QByteArray m_replyData;

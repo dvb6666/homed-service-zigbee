@@ -44,7 +44,7 @@ static quint16 const crc16Table[256] =
     0xf78f, 0xe606, 0xd49d, 0xc514, 0xb1ab, 0xa022, 0x92b9, 0x8330, 0x7bc7, 0x6a4e, 0x58d5, 0x495c, 0x3de3, 0x2c6a, 0x1ef1, 0x0f78
 };
 
-ZBoss::ZBoss(QSettings *config, QObject *parent) : Adapter(config, parent), m_timer(new QTimer(this)), m_clear(false), m_esp(false)
+ZBoss::ZBoss(QSettings *config, QObject *parent) : Adapter(config, parent), m_timer(new QTimer(this)), m_clear(false), m_check(false), m_esp(false)
 {
     m_policy.append({ZBOSS_POLICY_TC_LINK_KEYS_REQUIRED,           0x00});
     m_policy.append({ZBOSS_POLICY_IC_REQUIRED,                     0x00});
@@ -219,13 +219,28 @@ bool ZBoss::sendRequest(quint16 command, const QByteArray &data, quint8 id)
     commonHeader.id = qToLittleEndian(command);
 
     payload.append(reinterpret_cast <char*> (&commonHeader), sizeof(commonHeader));
-    payload.append(1, static_cast <char> (id));
+    payload.append(static_cast <char> (id));
     payload.append(data);
 
     crc = getCRC16(reinterpret_cast <quint8*> (payload.data()), payload.length());
-
     sendData(QByteArray(reinterpret_cast <char*> (&lowLevelHeader), sizeof(lowLevelHeader)).append(reinterpret_cast <char*> (&crc), sizeof(crc)).append(payload));
-    return waitForSignal(this, command & 0x0200 && command != ZBOSS_ZDO_PERMIT_JOINING_REQ ? SIGNAL(acknowledgeReceived()) : SIGNAL(dataReceived()), ZBOSS_REQUEST_TIMEOUT);
+
+    if (waitForSignal(this, command & 0x0200 && command != ZBOSS_ZDO_PERMIT_JOINING_REQ ? SIGNAL(acknowledgeReceived()) : SIGNAL(dataReceived()), ADAPTER_REQUEST_TIMEOUT))
+    {
+        m_errorCount = 0;
+        return true;
+    }
+
+    m_errorCount++;
+
+    if (m_watchdog && m_errorCount == WATCHDOG_ERROR_COUNT)
+    {
+        logWarning << "Watchdog triggered after" << WATCHDOG_ERROR_COUNT << "request errors...";
+        m_errorCount = 0;
+        reset();
+    }
+
+    return false;
 }
 
 void ZBoss::sendAcknowledge(void)
@@ -269,7 +284,7 @@ void ZBoss::parsePacket(quint8 type, quint16 command, const QByteArray &data)
 
             memcpy(&networkAddress, m_replyData.mid(m_replyData.length() - sizeof(networkAddress)), sizeof(networkAddress));
 
-            payload.append(1, static_cast <char> (m_replyStatus));
+            payload.append(static_cast <char> (m_replyStatus));
             payload.append(reinterpret_cast <const char*> (&networkAddress), sizeof(networkAddress));
             payload.append(reinterpret_cast <const char*> (message), sizeof(zbossNodeDescriptorResponseStruct));
 
@@ -285,13 +300,13 @@ void ZBoss::parsePacket(quint8 type, quint16 command, const QByteArray &data)
 
             memcpy(&networkAddress, data.mid(data.length() - sizeof(networkAddress)), sizeof(networkAddress));
 
-            payload.append(1, static_cast <char> (m_replyStatus));
+            payload.append(static_cast <char> (m_replyStatus));
             payload.append(reinterpret_cast <const char*> (&networkAddress), sizeof(networkAddress));
-            payload.append(1, static_cast <char> (message->inClusterCount * 2 + message->outClusterCount * 2) + sizeof(zbossSimpleDescriptorResponseStruct));
+            payload.append(static_cast <char> (message->inClusterCount * 2 + message->outClusterCount * 2) + sizeof(zbossSimpleDescriptorResponseStruct));
             payload.append(reinterpret_cast <const char*> (message), sizeof(zbossSimpleDescriptorResponseStruct) - 2);
-            payload.append(1, static_cast <char> (message->inClusterCount));
+            payload.append(static_cast <char> (message->inClusterCount));
             payload.append(m_replyData.mid(sizeof(zbossSimpleDescriptorResponseStruct), message->inClusterCount * 2));
-            payload.append(1, static_cast <char> (message->outClusterCount));
+            payload.append(static_cast <char> (message->outClusterCount));
             payload.append(m_replyData.mid(sizeof(zbossSimpleDescriptorResponseStruct) + message->inClusterCount * 2), message->outClusterCount * 2);
 
             emit zdoMessageReveived(networkAddress, ZDO_SIMPLE_DESCRIPTOR_REQUEST, payload);
@@ -305,7 +320,7 @@ void ZBoss::parsePacket(quint8 type, quint16 command, const QByteArray &data)
 
             memcpy(&networkAddress, data.mid(data.length() - sizeof(networkAddress)), sizeof(networkAddress));
 
-            payload.append(1, static_cast <char> (m_replyStatus));
+            payload.append(static_cast <char> (m_replyStatus));
             payload.append(reinterpret_cast <char*> (&networkAddress), sizeof(networkAddress));
             payload.append(data.mid(3, data.length() - 5));
 
@@ -358,7 +373,7 @@ void ZBoss::parsePacket(quint8 type, quint16 command, const QByteArray &data)
         }
     }
 
-    emit requestFinished(static_cast <quint8> (data.at(0)), m_replyStatus);
+    emit requestFinished(static_cast <quint8> (data.at(0)), static_cast <quint8> (data.at(2)));
 }
 
 void ZBoss::handleReset(void)
@@ -445,7 +460,13 @@ bool ZBoss::startCoordinator(void)
 
         if (*(reinterpret_cast <quint16*> (m_replyData.data())) != qToLittleEndian(m_panId))
         {
-            logWarning << "Adapter panid doesn't match configuration";
+            if (m_check)
+            {
+                logWarning << "Network not started, PAN ID collision detected";
+                return false;
+            }
+
+            logWarning << "Adapter PAN ID doesn't match configuration";
             check = true;
         }
 
@@ -459,7 +480,6 @@ bool ZBoss::startCoordinator(void)
 
             m_clear = true;
             softReset();
-
             return true;
         }
 
@@ -490,13 +510,13 @@ bool ZBoss::startCoordinator(void)
 
         if (!sendRequest(ZBOSS_SET_PAN_ID, QByteArray(reinterpret_cast <char*> (&m_panId), sizeof(m_panId))) || m_replyStatus)
         {
-            logWarning << "Set panid request failed";
+            logWarning << "Set PAN ID request failed";
             return false;
         }
 
         if (!sendRequest(ZBOSS_SET_NWK_KEY, QByteArray(m_networkKey).append(1, 0x00)) || m_replyStatus)
         {
-            logWarning << "Set nwk request failed";
+            logWarning << "Set networt key request failed";
             return false;
         }
 
@@ -512,6 +532,10 @@ bool ZBoss::startCoordinator(void)
             logWarning << "Network startup failed";
             return false;
         }
+
+        m_check = true;
+        softReset();
+        return true;
     }
 
     for (auto it = m_endpoints.begin(); it != m_endpoints.end(); it++)

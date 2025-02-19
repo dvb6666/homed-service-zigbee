@@ -4,69 +4,71 @@
 
 void PropertiesTUYA::Data::parseCommand(quint16, quint8 commandId, const QByteArray &payload)
 {
-    const tuyaHeaderStruct *header = reinterpret_cast <const tuyaHeaderStruct*> (payload.constData());
-    QVariant data;
+    QList <quint8> list = {0x01, 0x02, 0x05, 0x06};
+    tuyaHeaderStruct header;
+    int offset = 0;
 
-    switch (commandId)
-    {
-        case 0x01:
-        case 0x02:
-        case 0x05:
-        case 0x06:
-            data = parseData(header, payload.mid(sizeof(tuyaHeaderStruct)));
-            break;
-
-        default:
-            return;
-    }
-
-    if (!data.isValid())
+    if (!list.contains(commandId))
         return;
 
-    update(header->dataPoint, data);
-}
-
-QVariant PropertiesTUYA::Data::parseData(const tuyaHeaderStruct *header, const QByteArray &data)
-{
-    switch (header->dataType)
+    while (offset < payload.length())
     {
-        case TUYA_TYPE_RAW:
-            return data.mid(0, header->length);
+        QByteArray data;
 
-        case TUYA_TYPE_BOOL:
+        memcpy(offset ? &header.dataPoint : &header.status, payload.constData() + offset, sizeof(header) - (offset ? 2 : 0));
+        data = payload.mid(sizeof(header) + (offset ? offset - 2 : 0), header.length);
 
-            if (header->length == 1)
-                return data.at(0) ? true : false;
-
-            break;
-
-        case TUYA_TYPE_VALUE:
-
-            if (header->length == 4)
+        switch (header.dataType)
+        {
+            case TUYA_TYPE_RAW:
             {
-                quint32 value = 0;
-                memcpy(&value, data.constData(), header->length);
-                return qFromBigEndian(value);
+                update(header.dataPoint, data.mid(0, header.length));
+                break;
             }
 
-            break;
+            case TUYA_TYPE_BOOL:
+            {
+                if (header.length != 1)
+                    return;
 
-        case TUYA_TYPE_ENUM:
+                update(header.dataPoint, data.at(0) ? true : false);
+                break;
+            }
 
-            if (header->length == 1)
-                return static_cast <quint8> (data.at(0));
+            case TUYA_TYPE_VALUE:
+            {
+                qint32 value = 0;
 
-            break;
+                if (header.length != 4)
+                    return;
+
+                memcpy(&value, data.constData(), header.length);
+                update(header.dataPoint, qFromBigEndian(value));
+                break;
+            }
+
+            case TUYA_TYPE_ENUM:
+            {
+                if (header.length != 1)
+                    return;
+
+                update(header.dataPoint, static_cast <quint8> (data.at(0)));
+                break;
+            }
+
+            default:
+                return;
+        }
+
+        offset += header.length + sizeof(header) - (offset ? 2 : 0);
     }
-
-    return QVariant();
 }
 
 void PropertiesTUYA::DataPoints::update(quint8 dataPoint, const QVariant &data)
 {
     QMap <QString, QVariant> map = m_value.toMap();
     QList <QVariant> list = option().toMap().value(QString::number(dataPoint)).toList();
-    QList <QString> types = {"raw", "bool", "value", "enum"};
+    QList <QString> typeList = {"raw", "bool", "value", "enum"};
 
     for (int i = 0; i < list.count(); i++)
     {
@@ -78,18 +80,18 @@ void PropertiesTUYA::DataPoints::update(quint8 dataPoint, const QVariant &data)
 
         options = option(name).toMap();
 
-        switch (types.indexOf(item.value("type").toString()))
+        switch (typeList.indexOf(item.value("type").toString()))
         {
             case 0: // raw
             {
-                QList <QString> modelList = {"_TZE200_bcusnqt8", "_TZE200_lsanae15", "_TZE200_ves1ycwx", "_TZE204_lsanae15", "_TZE204_ves1ycwx"}, nameList = name.split('_');
+                QList <QString> modelList = {"_TZE200_bkkmqmyo", "_TZE200_eaac7dkw", "_TZE204_bkkmqmyo", "_TZE204_wbhaespm"}, nameList = name.split('_');
                 QByteArray payload = data.toByteArray();
                 quint16 value = 0;
 
-                if (nameList.value(0) != "elictricity")
+                if (nameList.value(0) != "electricity")
                     break;
 
-                if (modelList.contains(manufacturerName()))
+                if (!modelList.contains(manufacturerName()))
                 {
                     quint8 id = static_cast <quint8> (nameList.value(1).toInt());
 
@@ -179,16 +181,16 @@ void PropertiesTUYA::HolidayThermostatProgram::update(quint8 dataPoint, const QV
 
     if (dataPoint == 0x70 || dataPoint == 0x71)
     {
-        QList <QString> types = {"weekday", "holiday"}, names = {"Hour", "Minute", "Temperature"};
-        QString type = types.value(dataPoint - 0x70);
+        QList <QString> typeList = {"weekday", "holiday"}, nameList = {"Hour", "Minute", "Temperature"};
+        QString type = typeList.value(dataPoint - 0x70);
         QByteArray program = data.toByteArray();
 
-        meta().insert(QString("%1Program").arg(type), true);
+        setMeta(QString("%1Program").arg(type), true);
 
         for (int i = 0; i < 18; i++)
         {
             quint8 value = static_cast <quint8> (program.at(i));
-            map.insert(QString("%1P%2%3").arg(type).arg(i / 3 + 1).arg(names.value(i % 3)), value);
+            map.insert(QString("%1P%2%3").arg(type).arg(i / 3 + 1).arg(nameList.value(i % 3)), value);
         }
     }
 
@@ -197,27 +199,37 @@ void PropertiesTUYA::HolidayThermostatProgram::update(quint8 dataPoint, const QV
 
 void PropertiesTUYA::DailyThermostatProgram::update(quint8 dataPoint, const QVariant &data)
 {
-    QList <QVariant> list = option("prorgamDataPoints").toList();
+    QList <QVariant> list = option("programDataPoints").toList();
     QMap <QString, QVariant> map = m_value.toMap();
 
     if (list.contains(dataPoint))
     {
-        QList <QString> types = {"monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"};
-        QString type = types.value(list.indexOf(dataPoint));
+        QList <QString> modelList = {"_TZE204_ltwbm23f", "_TZE204_qyr2m29i"}, typeList = {"monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"};
+        QString type = typeList.value(list.indexOf(dataPoint));
         QByteArray program = data.toByteArray().mid(1);
 
-        meta().insert(QString("%1Program").arg(type), true);
+        setMeta(QString("%1Program").arg(type), true);
 
-        for (int i = 0; i < 4; i++)
+        if (!modelList.contains(manufacturerName()))
         {
-            QString key = QString("%1P%2").arg(type).arg(i + 1);
-            quint16 tempertarure;
-
-            memcpy(&tempertarure, program.constData() + i * 4 + 2, sizeof(tempertarure));
-
-            map.insert(QString("%1Hour").arg(key), static_cast <quint8> (program.at(i * 4)));
-            map.insert(QString("%1Minute").arg(key), static_cast <quint8> (program.at(i * 4 + 1)));
-            map.insert(QString("%1Temperature").arg(key), qFromBigEndian(tempertarure) / 10.0);
+            for (int i = 0; i < (option("thermostatProgram").toString() != "extended" ? 4 : 6); i++)
+            {
+                QString key = QString("%1P%2").arg(type).arg(i + 1);
+                map.insert(QString("%1Hour").arg(key), static_cast <quint8> (program.at(i * 4)));
+                map.insert(QString("%1Minute").arg(key), static_cast <quint8> (program.at(i * 4 + 1)));
+                map.insert(QString("%1Temperature").arg(key), qFromBigEndian <quint16> (*(reinterpret_cast <const quint16*> (program.constData() + i * 4 + 2))) / 10.0);
+            }
+        }
+        else
+        {
+            for (int i = 0; i < 6; i++)
+            {
+                QString key = QString("%1P%2").arg(type).arg(i + 1);
+                quint16 time = qFromBigEndian <quint16> (*(reinterpret_cast <const quint16*> (program.constData() + i * 4))) & 0x0FFF;
+                map.insert(QString("%1Hour").arg(key), static_cast <quint8> (time / 60));
+                map.insert(QString("%1Minute").arg(key), static_cast <quint8> (time % 60));
+                map.insert(QString("%1Temperature").arg(key), (qFromBigEndian <quint16> (*(reinterpret_cast <const quint16*> (program.constData() + i * 4 + 2))) & 0x0FFF) / 10.0);
+            }
         }
     }
 
@@ -230,15 +242,15 @@ void PropertiesTUYA::MoesThermostatProgram::update(quint8 dataPoint, const QVari
 
     if (dataPoint == 0x65)
     {
-        QList <QString> types = {"weekday", "saturday", "sunday"}, names = {"Hour", "Minute", "Temperature"};
+        QList <QString> typeList = {"weekday", "saturday", "sunday"}, nameList = {"Hour", "Minute", "Temperature"};
         QByteArray program = data.toByteArray();
 
-        meta().insert("program", true);
+        setMeta("program", true);
 
         for (int i = 0; i < 36; i++)
         {
             double value = static_cast <double> (program.at(i));
-            map.insert(QString("%1P%2%3").arg(types.value(i / 12)).arg(i / 3 % 4 + 1).arg(names.value(i % 3)), (i + 1) % 3 ? value : value / 2);
+            map.insert(QString("%1P%2%3").arg(typeList.value(i / 12)).arg(i / 3 % 4 + 1).arg(nameList.value(i % 3)), (i + 1) % 3 ? value : value / 2);
         }
     }
 
@@ -348,7 +360,7 @@ void PropertiesTUYA::IRCode::parseCommand(quint16, quint8 commandId, const QByte
             memcpy(&position, payload.constData() + 2, sizeof(position));
             position = qFromLittleEndian(position);
             size = static_cast <quint8> (payload.at(payload.length() - 1));
-            data = meta().value("message").toByteArray().mid(position, size);
+            data = meta("message").toByteArray().mid(position, size);
 
             for (int i = 0; i < data.length(); i++)
                 crc += data.at(i);

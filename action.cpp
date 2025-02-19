@@ -2,6 +2,7 @@
 #include "actions/efekta.h"
 #include "actions/ias.h"
 #include "actions/lumi.h"
+#include "actions/other.h"
 #include "actions/ptvo.h"
 #include "actions/tuya.h"
 #include "device.h"
@@ -28,10 +29,12 @@ void ActionObject::registerMetaTypes(void)
     qRegisterMetaType <ActionsIAS::Warning>                     ("iasWarningAction");
 
     qRegisterMetaType <ActionsLUMI::PresenceSensor>             ("lumiPresenceSensorAction");
-    qRegisterMetaType <ActionsLUMI::Thermostat>                 ("lumiThermostatAction");
+    qRegisterMetaType <ActionsLUMI::RadiatorThermostat>         ("lumiRadiatorThermostatAction");
+    qRegisterMetaType <ActionsLUMI::ElectricThermostat>         ("lumiElectricThermostatAction");
     qRegisterMetaType <ActionsLUMI::ButtonMode>                 ("lumiButtonModeAction");
     qRegisterMetaType <ActionsLUMI::SwitchStatusMemory>         ("lumiSwitchStatusMemoryAction");
     qRegisterMetaType <ActionsLUMI::LightStatusMemory>          ("lumiLightStatusMemoryAction");
+    qRegisterMetaType <ActionsLUMI::BasicStatusMemory>          ("lumiBasicStatusMemoryAction");
     qRegisterMetaType <ActionsLUMI::CoverPosition>              ("lumiCoverPositionAction");
     qRegisterMetaType <ActionsLUMI::VibrationSensitivity>       ("lumiVibrationSensitivityAction");
     qRegisterMetaType <ActionsLUMI::OperationMode>              ("lumiOperationModeAction");
@@ -53,7 +56,7 @@ void ActionObject::registerMetaTypes(void)
     qRegisterMetaType <ActionsTUYA::SwitchType>                 ("tuyaSwitchTypeAction");
     qRegisterMetaType <ActionsTUYA::PowerOnStatus>              ("tuyaPowerOnStatusAction");
 
-    qRegisterMetaType <ActionsEfekta::ReportingDelay>           ("efektaReportingDelayAction");
+    qRegisterMetaType <ActionsEfekta::ReadInterval>             ("efektaReadIntervalAction");
     qRegisterMetaType <ActionsEfekta::TemperatureSettings>      ("efektaTemperatureSettingsAction");
     qRegisterMetaType <ActionsEfekta::HumiditySettings>         ("efektaHumiditySettingsAction");
     qRegisterMetaType <ActionsEfekta::CO2Settings>              ("efektaCO2SettingsAction");
@@ -64,6 +67,13 @@ void ActionObject::registerMetaTypes(void)
     qRegisterMetaType <ActionsPTVO::Count>                      ("ptvoCountAction");
     qRegisterMetaType <ActionsPTVO::Pattern>                    ("ptvoPatternAction");
     qRegisterMetaType <ActionsPTVO::SerialData>                 ("ptvoSerialDataAction");
+
+    qRegisterMetaType <ActionsYandex::Settings>                 ("yandexSettingsAction");
+}
+
+QByteArray ActionObject::ieeeAddress(void)
+{
+    return static_cast <EndpointObject*> (m_parent)->device()->ieeeAddress();
 }
 
 Property ActionObject::endpointProperty(const QString &name)
@@ -87,6 +97,11 @@ Property ActionObject::endpointProperty(const QString &name)
 QByteArray ActionObject::writeAttribute(quint8 dataType, void *value, size_t length)
 {
     return writeAttributeRequest(m_transactionId++, m_manufacturerCode, m_attributes.at(0), dataType, QByteArray(reinterpret_cast <char*> (value), length));
+}
+
+QByteArray ActionObject::writeAttribute(quint8 dataType, const QByteArray &data)
+{
+    return writeAttributeRequest(m_transactionId++, m_manufacturerCode, m_attributes.at(0), dataType, data);
 }
 
 qint8 ActionObject::listIndex(const QList <QString> &list, const QVariant &value)
@@ -118,7 +133,7 @@ int ActionObject::enumIndex(const QString name, const QVariant &value)
     return -1;
 }
 
-QByteArray EnumAction::request(const QString &, const QVariant &data)
+QVariant EnumAction::request(const QString &, const QVariant &data)
 {
     int index = enumIndex(m_name, data);
     quint8 value = static_cast <quint8> (index);

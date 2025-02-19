@@ -12,17 +12,31 @@ namespace ActionsLUMI
     public:
 
         PresenceSensor(void) : ActionObject("presenceSensor", CLUSTER_LUMI, MANUFACTURER_CODE_LUMI, QList <QString> {"sensitivityMode", "detectionMode", "distanceMode", "resetPresence"}) {}
-        QByteArray request(const QString &name, const QVariant &data) override;
+        QVariant request(const QString &name, const QVariant &data) override;
 
     };
 
-    class Thermostat : public ActionObject
+    class RadiatorThermostat : public ActionObject
     {
 
     public:
 
-        Thermostat(void) : ActionObject("thermostat", CLUSTER_LUMI, MANUFACTURER_CODE_LUMI, QList <QString> {"targetTemperature", "systemMode", "fanMode"}) {}
-        QByteArray request(const QString &name, const QVariant &data) override;
+        RadiatorThermostat(void) : ActionObject("thermostat", CLUSTER_LUMI, MANUFACTURER_CODE_LUMI, QList <QString> {"sensorType", "externalTemperature"}) {}
+        QVariant request(const QString &name, const QVariant &data) override;
+
+    private:
+
+        QByteArray header(quint8 length, quint8 counter, quint8 action);
+
+    };
+
+    class ElectricThermostat : public ActionObject
+    {
+
+    public:
+
+        ElectricThermostat(void) : ActionObject("thermostat", CLUSTER_LUMI, MANUFACTURER_CODE_LUMI, QList <QString> {"targetTemperature", "systemMode", "fanMode"}) {}
+        QVariant request(const QString &name, const QVariant &data) override;
 
     };
 
@@ -32,7 +46,7 @@ namespace ActionsLUMI
     public:
 
         ButtonMode(void) : ActionObject("buttonMode", CLUSTER_BASIC, MANUFACTURER_CODE_LUMI, QList <QString> {"buttonMode", "leftMode", "rightMode"}) {}
-        QByteArray request(const QString &name, const QVariant &data) override;
+        QVariant request(const QString &name, const QVariant &data) override;
 
     };
 
@@ -42,7 +56,7 @@ namespace ActionsLUMI
     public:
 
         SwitchStatusMemory(void) : ActionObject("statusMemory", CLUSTER_LUMI, MANUFACTURER_CODE_LUMI, 0x0201) {}
-        QByteArray request(const QString &name, const QVariant &data) override;
+        QVariant request(const QString &name, const QVariant &data) override;
 
     };
 
@@ -52,7 +66,17 @@ namespace ActionsLUMI
     public:
 
         LightStatusMemory(void) : ActionObject("statusMemory", CLUSTER_BASIC, MANUFACTURER_CODE_LUMI, 0xFF19) {}
-        QByteArray request(const QString &name, const QVariant &data) override;
+        QVariant request(const QString &name, const QVariant &data) override;
+
+    };
+
+    class BasicStatusMemory : public ActionObject
+    {
+
+    public:
+
+        BasicStatusMemory(void) : ActionObject("statusMemory", CLUSTER_BASIC, MANUFACTURER_CODE_LUMI, 0xFFF0) {}
+        QVariant request(const QString &name, const QVariant &data) override;
 
     };
 
@@ -62,7 +86,7 @@ namespace ActionsLUMI
     public:
 
         CoverPosition(void) : ActionObject("position", CLUSTER_ANALOG_OUTPUT, 0x0000, 0x0055) {}
-        QByteArray request(const QString &name, const QVariant &data) override;
+        QVariant request(const QString &name, const QVariant &data) override;
 
     };
 
@@ -72,7 +96,7 @@ namespace ActionsLUMI
     public:
 
         VibrationSensitivity(void) : ActionObject("sensitivityMode", CLUSTER_BASIC, MANUFACTURER_CODE_LUMI, 0xFF0D) {}
-        QByteArray request(const QString &name, const QVariant &data) override;
+        QVariant request(const QString &name, const QVariant &data) override;
 
     };
 

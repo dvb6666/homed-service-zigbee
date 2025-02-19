@@ -4,10 +4,12 @@
 
 Controller::Controller(const QString &configFile) : HOMEd(configFile, true), m_deviceDataTimer(new QTimer(this)), m_propertiesTimer(new QTimer(this)), m_zigbee(nullptr), m_commands(QMetaEnum::fromType <Command> ()), m_networkStarted(false)
 {
+    bool panId = getConfig()->value("zigbee/panid").toString().isEmpty(), key = getConfig()->value("security/key").toString().isEmpty();
+
     logInfo << "Starting version" << SERVICE_VERSION;
     logInfo << "Configuration file is" << getConfig()->fileName();
 
-    if (getConfig()->value("zigbee/panid").toString().isEmpty())
+    if (panId || key)
     {
         QFile file(getConfig()->fileName());
         bool check = false;
@@ -15,22 +17,38 @@ Controller::Controller(const QString &configFile) : HOMEd(configFile, true), m_d
         if (file.open(QFile::ReadWrite))
         {
             QByteArray data = file.readAll();
-            quint16 panId = static_cast <quint16> (QRandomGenerator::global()->generate());
 
-            data.replace("panid=", QString::asprintf("panid=0x%04x", panId).toUtf8());
+            if (panId)
+            {
+                QByteArray value;
+
+                for (int i = 0; i < 2; i++)
+                    value.append(static_cast <char> (QRandomGenerator::global()->generate()));
+
+                data.replace("panid=", QString("panid=0x%1").arg(QString(value.toHex())).toUtf8());
+            }
+
+            if (key)
+            {
+                QByteArray value;
+
+                for (int i = 0; i < 16; i++)
+                    value.append(static_cast <char> (QRandomGenerator::global()->generate()));
+
+                data.replace("key=", QString("key=0x%1").arg(QString(value.toHex())).toUtf8());
+            }
+
             file.seek(0);
 
             if (file.write(data) == data.length())
-            {
-                logInfo << "New PAN ID" << QString::asprintf("0x%04x", panId) << "sucessfully stored";
                 check = true;
-            }
 
             file.close();
+            system("sync");
         }
 
         if (!check)
-            logWarning << "New PAN ID not stored, config file write error";
+            logWarning << "Settings not stored, config file write error";
 
         return;
     }
@@ -77,7 +95,10 @@ void Controller::serviceOnline(void)
     }
 
     if (m_haEnabled)
+    {
         mqttPublishDiscovery("ZigBee", SERVICE_VERSION, m_haPrefix, true);
+        mqttSubscribe(m_haStatus);
+    }
 
     m_zigbee->devices()->storeDatabase();
     mqttPublishStatus();
@@ -95,9 +116,6 @@ void Controller::mqttConnected(void)
 {
     mqttSubscribe(mqttTopic("command/%1").arg(serviceTopic()));
     mqttSubscribe(mqttTopic("td/%1/#").arg(serviceTopic()));
-
-    if (m_haEnabled)
-        mqttSubscribe(m_haStatus);
 
     if (!m_networkStarted)
         return;
@@ -168,7 +186,7 @@ void Controller::mqttReceived(const QByteArray &message, const QMqttTopicName &t
                 m_zigbee->otaControl(json.value("device").toString(), false, true);
                 break;
 
-            case  Command::getProperties:
+            case Command::getProperties:
                 m_zigbee->getProperties(json.value("device").toString());
                 break;
 
@@ -236,7 +254,7 @@ void Controller::updateDeviceData(void)
         if (!timeout)
             timeout = it.value()->batteryPowered() ? 86400 : 600;
 
-        it.value()->setAvailability(it.value()->active() ? time - it.value()->lastSeen() <= timeout ? Availability::Online : Availability::Offline : Availability::Inactive);
+        it.value()->setAvailability(it.value()->active() && time - it.value()->lastSeen() <= timeout ? Availability::Online : Availability::Offline);
 
         if (it.value()->availability() == check && m_lastSeen.value(it.value()->ieeeAddress()) == it.value()->lastSeen())
             continue;

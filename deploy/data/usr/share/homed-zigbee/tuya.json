@@ -29,7 +29,7 @@
                           "tuyaDataPoints":
                           {
                             "1":    [{"name": "energy", "type": "value", "divider": 100}],
-                            "6":    [{"name": "elictricity", "type": "raw"}],
+                            "6":    [{"name": "electricity", "type": "raw"}],
                             "16":   [{"name": "status", "type": "bool", "action": true}],
                             "102":  [{"name": "producedEnergy", "type": "value", "divider": 100}],
                             "103":  [{"name": "power", "type": "value", "divider": 100}],
@@ -65,7 +65,7 @@
                           "tuyaDataPoints":
                           {
                             "1":    [{"name": "energy", "type": "value", "divider": 100}],
-                            "6":    [{"name": "elictricity", "type": "raw"}],
+                            "6":    [{"name": "electricity", "type": "raw"}],
                             "16":   [{"name": "status", "type": "bool", "action": true}]
                           },
                           "status": {"enum": ["off", "on"]}
@@ -82,7 +82,7 @@
                           {
                             "1":    [{"name": "energy", "type": "value", "divider": 100}],
                             "2":    [{"name": "producedEnergy", "type": "value", "divider": 100}],
-                            "6":    [{"name": "elictricity", "type": "raw"}]
+                            "6":    [{"name": "electricity", "type": "raw"}]
                           }
                         }
     },
@@ -96,7 +96,7 @@
                           "tuyaDataPoints":
                           {
                             "101":  [{"name": "power_1", "type": "value", "divider": 10}],
-                            "105":  [{"name": "power_1", "type": "value", "divider": 10}],
+                            "105":  [{"name": "power_2", "type": "value", "divider": 10}],
                             "106":  [{"name": "energy_1", "type": "value", "divider": 100}],
                             "107":  [{"name": "producedEnergy_1", "type": "value", "divider": 100}],
                             "108":  [{"name": "energy_2", "type": "value", "divider": 100}],
@@ -109,18 +109,37 @@
                         }
     },
     {
-      "description":    "TUYA TS0601 3-Phase Electricity Meter",
+      "description":    "TUYA TS0601 3-Phase Electricity Meter (Type A)",
       "modelNames":     ["_TZE200_ves1ycwx", "_TZE204_ves1ycwx"],
       "properties":     ["tuyaDataPoints"],
       "actions":        ["tuyaDataPoints"],
-      "exposes":        ["energy", "voltage_1", "current_1", "power_1", "voltage_2", "current_2", "power_2", "voltage_3", "current_3", "power_3"],
+      "exposes":        ["energy", "producedEnergy", "voltage_1", "current_1", "power_1", "voltage_2", "current_2", "power_2", "voltage_3", "current_3", "power_3"],
       "options":        {
                           "tuyaDataPoints":
                           {
                             "1":    [{"name": "energy", "type": "value", "divider": 100}],
-                            "6":    [{"name": "elictricity_1", "type": "raw"}],
-                            "7":    [{"name": "elictricity_2", "type": "raw"}],
-                            "8":    [{"name": "elictricity_3", "type": "raw"}]
+                            "2":    [{"name": "producedEnergy", "type": "value", "divider": 100}],
+                            "6":    [{"name": "electricity_1", "type": "raw"}],
+                            "7":    [{"name": "electricity_2", "type": "raw"}],
+                            "8":    [{"name": "electricity_3", "type": "raw"}]
+                          }
+                        }
+    },
+    {
+      "description":    "TUYA TS0601 3-Phase Electricity Meter (Type B)",
+      "modelNames":     ["_TZE284_a14rjslz"],
+      "properties":     ["tuyaDataPoints"],
+      "actions":        ["tuyaDataPoints"],
+      "exposes":        ["energy", "producedEnergy", "voltage_1", "current_1", "power_1", "voltage_2", "current_2", "power_2", "voltage_3", "current_3", "power_3", "powerFactor"],
+      "options":        {
+                          "tuyaDataPoints":
+                          {
+                            "1":    [{"name": "energy", "type": "value", "divider": 100}],
+                            "6":    [{"name": "electricity_1", "type": "raw"}],
+                            "7":    [{"name": "electricity_2", "type": "raw"}],
+                            "8":    [{"name": "electricity_3", "type": "raw"}],
+                            "23":   [{"name": "producedEnergy", "type": "value", "divider": 100}],
+                            "50":   [{"name": "powerFactor", "type": "value"}]
                           }
                         }
     },
@@ -160,12 +179,9 @@
                             "10":   [{"name": "lightType_2", "type": "enum", "action": true}],
                             "14":   [{"name": "powerOnStatus", "type": "enum", "action": true}]
                           },
-                          "status_1": {"enum": ["off", "on"]},
-                          "status_2": {"enum": ["off", "on"]},
-                          "light_1": ["level"],
-                          "light_2": ["level"],
-                          "lightType_1": {"type": "select", "enum": ["led", "incandescent", "halogen"], "icon": "mdi:lightbulb-on"},
-                          "lightType_2": {"type": "select", "enum": ["led", "incandescent", "halogen"], "icon": "mdi:lightbulb-on"},
+                          "status": {"enum": ["off", "on"]},
+                          "light": ["level"],
+                          "lightType": {"type": "select", "enum": ["led", "incandescent", "halogen"], "icon": "mdi:lightbulb-on"},
                           "powerOnStatus": {"enum": ["off", "on", "previous"]}
                         }
     },
@@ -187,14 +203,7 @@
                             "101":  [{"name": "status_7", "type": "bool", "action": true}],
                             "102":  [{"name": "status_8", "type": "bool", "action": true}]
                           },
-                          "status_1": {"enum": ["off", "on"]},
-                          "status_2": {"enum": ["off", "on"]},
-                          "status_3": {"enum": ["off", "on"]},
-                          "status_4": {"enum": ["off", "on"]},
-                          "status_5": {"enum": ["off", "on"]},
-                          "status_6": {"enum": ["off", "on"]},
-                          "status_7": {"enum": ["off", "on"]},
-                          "status_8": {"enum": ["off", "on"]}
+                          "status": {"enum": ["off", "on"]}
                         }
     },
     {
@@ -219,22 +228,34 @@
                             "105":  [{"name": "status_11", "type": "bool", "action": true}],
                             "106":  [{"name": "status_12", "type": "bool", "action": true}]
                           },
-                          "status_1": {"enum": ["off", "on"]},
-                          "status_2": {"enum": ["off", "on"]},
-                          "status_3": {"enum": ["off", "on"]},
-                          "status_4": {"enum": ["off", "on"]},
-                          "status_5": {"enum": ["off", "on"]},
-                          "status_6": {"enum": ["off", "on"]},
-                          "status_7": {"enum": ["off", "on"]},
-                          "status_8": {"enum": ["off", "on"]},
-                          "status_9": {"enum": ["off", "on"]},
-                          "status_10": {"enum": ["off", "on"]},
-                          "status_11": {"enum": ["off", "on"]},
-                          "status_12": {"enum": ["off", "on"]}
+                          "status": {"enum": ["off", "on"]}
                         }
     },
     {
+      "description":    "TUYA TS0601 1-Channel Switch",
+      "modelNames":     ["_TZE200_ojtqawav", "_TZE204_gbagoilo", "_TZE204_ojtqawav"],
+      "properties":     ["tuyaDataPoints"],
+      "actions":        ["tuyaDataPoints"],
+      "exposes":        ["switch"],
+      "options":        {"tuyaDataPoints": {"1": [{"name": "status", "type": "bool", "action": true}]}, "status": {"enum": ["off", "on"]}}
+    },
+    {
       "description":    "TUYA TS0601 2-Channel Switch",
+      "modelNames":     ["_TZE200_3t91nb6k", "_TZE200_ji1gn7rw", "_TZE200_nh9m9emk", "_TZE200_nkjintbl", "_TZE204_3t91nb6k", "_TZE204_wvovwe9h"],
+      "properties":     ["tuyaDataPoints"],
+      "actions":        ["tuyaDataPoints"],
+      "exposes":        ["switch_1", "switch_2"],
+      "options":        {
+                          "tuyaDataPoints":
+                          {
+                            "1":    [{"name": "status_1", "type": "bool", "action": true}],
+                            "2":    [{"name": "status_2", "type": "bool", "action": true}]
+                          },
+                          "status": {"enum": ["off", "on"]}
+                        }
+    },
+    {
+      "description":    "TUYA TS0601 Configurable 2-Channel Switch",
       "modelNames":     ["_TZE200_wunufsil"],
       "properties":     ["tuyaDataPoints"],
       "actions":        ["tuyaDataPoints"],
@@ -247,9 +268,24 @@
                             "14":   [{"name": "powerOnStatus", "type": "enum", "action": true}],
                             "16":   [{"name": "backlight", "type": "bool", "action": true}]
                           },
-                          "status_1": {"enum": ["off", "on"]},
-                          "status_2": {"enum": ["off", "on"]},
+                          "status": {"enum": ["off", "on"]},
                           "powerOnStatus": {"enum": ["off", "on", "previous"]}
+                        }
+    },
+    {
+      "description":    "TUYA TS0601 3-Channel Switch",
+      "modelNames":     ["_TZE200_2hf7x9n3", "_TZE204_2imwyigp", "_TZE200_atpwqgml", "_TZE200_bynnczcb", "_TZE200_go3tvswy", "_TZE200_kyfqmmyl", "_TZE204_atpwqgml"],
+      "properties":     ["tuyaDataPoints"],
+      "actions":        ["tuyaDataPoints"],
+      "exposes":        ["switch_1", "switch_2", "switch_3"],
+      "options":        {
+                          "tuyaDataPoints":
+                          {
+                            "1":    [{"name": "status_1", "type": "bool", "action": true}],
+                            "2":    [{"name": "status_2", "type": "bool", "action": true}],
+                            "3":    [{"name": "status_3", "type": "bool", "action": true}]
+                          },
+                          "status": {"enum": ["off", "on"]}
                         }
     },
     {
@@ -315,47 +351,10 @@
     },
     {
       "description":    "TUYA TS0601 Radiator Thermostat (Type B)",
-      "modelNames":     ["_TZE204_g2ki0ejr"],
+      "modelNames":     ["_TZE200_6rdj8dzm", "_TZE200_9xfjixap", "_TZE200_bvu2wnxz", "_TZE200_hvaxb2tc", "_TZE200_jkfbph7l", "_TZE200_p3dbf6qs", "_TZE200_rxntag7i", "_TZE200_rxq4iti9", "_TZE200_yqgbrdyo", "_TZE204_o3x45p96", "_TZE204_ogx8u5z6", "_TZE284_p3dbf6qs", "_TZE284_c6wv4xyo", "_TZE284_o3x45p96"],
       "properties":     ["tuyaDataPoints", "tuyaDailyThermostatProgram"],
       "actions":        ["tuyaDataPoints", "tuyaDailyThermostatProgram"],
-      "exposes":        ["battery", "thermostat", "childLock", "holidayTemperature", "comfortTemperature", "frostProtection", "boost", "boostTimeout", "temperatureLow", "temperatureHigh", "temperatureOffset", "thermostatProgram"],
-      "options":        {
-                          "tuyaDataPoints":
-                          {
-                            "2":    [{"name": "operationMode", "type": "enum", "action": true}],
-                            "4":    [{"name": "targetTemperature", "type": "value", "divider": 10, "action": true}],
-                            "5":    [{"name": "temperature", "type": "value", "divider": 10}],
-                            "6":    [{"name": "battery", "type": "value"}],
-                            "7":    [{"name": "childLock", "type": "bool", "action": true}],
-                            "9":    [{"name": "temperatureHigh", "type": "value", "divider": 10, "action": true}],
-                            "10":   [{"name": "temperatureLow", "type": "value", "divider": 10, "action": true}],
-                            "21":   [{"name": "holidayTemperature", "type": "value", "action": true}],
-                            "24":   [{"name": "comfortTemperature", "type": "value", "divider": 10, "action": true}],
-                            "36":   [{"name": "frostProtection", "type": "bool", "action": true}],
-                            "37":   [{"name": "boost", "type": "bool", "action": true}],
-                            "38":   [{"name": "boostTimeout", "type": "value", "action": true}],
-                            "47":   [{"name": "temperatureOffset", "type": "value", "action": true}],
-                            "49":   [{"name": "running", "type": "bool"}]
-                          },
-                          "operationMode": {"enum": ["program", "holiday", "manual", "comfort"]},
-                          "targetTemperature": {"min": 5, "max": 30, "step": 0.5},
-                          "temperatureHigh": {"min": 15, "max": 45},
-                          "temperatureLow": {"min": 5, "max": 15},
-                          "holidayTemperature": {"min": 5, "max": 35},
-                          "comfortTemperature": {"min": 5, "max": 35},
-                          "boostTimeout": {"min": 0, "max": 465, "step": 5},
-                          "temperatureOffset": {"min": -9, "max": 9},
-                          "thermostatProgram": "daily",
-                          "prorgamDataPoints": [28, 29, 30, 31, 32, 33, 34],
-                          "runningStatus": true
-                        }
-    },
-    {
-      "description":    "TUYA TS0601 Radiator Thermostat (Type C)",
-      "modelNames":     ["_TZE204_ltwbm23f", "_TZE204_qyr2m29i"],
-      "properties":     ["tuyaDataPoints", "tuyaDailyThermostatProgram"],
-      "actions":        ["tuyaDataPoints", "tuyaDailyThermostatProgram"],
-      "exposes":        ["battery", "thermostat", "position", "childLock", "comfortTemperature", "ecoTemperature", "temperatureLow", "temperatureHigh", "temperatureOffset", "thermostatProgram"],
+      "exposes":        ["thermostat", "batteryLow", "childLock", "frostProtection", "temperatureOffset", "thermostatProgram"],
       "options":        {
                           "tuyaDataPoints":
                           {
@@ -363,25 +362,98 @@
                             "3":    [{"name": "running", "type": "bool", "invert": true}],
                             "4":    [{"name": "targetTemperature", "type": "value", "divider": 10, "action": true}],
                             "5":    [{"name": "temperature", "type": "value", "divider": 10}],
+                            "7":    [{"name": "childLock", "type": "bool", "action": true}],
+                            "35":   [{"name": "batteryLow", "type": "bool"}],
+                            "36":   [{"name": "frostProtection", "type": "bool", "action": true}],
+                            "47":   [{"name": "temperatureOffset", "type": "value", "action": true}]
+                          },
+                          "operationMode": {"enum": ["program", "manual", "standby"]},
+                          "targetTemperature": {"min": 5, "max": 35, "step": 0.5},
+                          "temperatureOffset": {"min": -9, "max": 9},
+                          "thermostatProgram": "extended",
+                          "programDataPoints": [28, 29, 30, 31, 32, 33, 34],
+                          "runningStatus": true
+                        }
+    },
+    {
+      "description":    "TUYA TS0601 Radiator Thermostat (Type C)",
+      "modelNames":     ["_TZE204_g2ki0ejr"],
+      "properties":     ["tuyaDataPoints", "tuyaDailyThermostatProgram"],
+      "actions":        ["tuyaDataPoints", "tuyaDailyThermostatProgram"],
+      "exposes":        ["battery", "thermostat", "childLock", "comfortTemperature", "awayTemperature", "frostProtection", "boost", "boostTimeout", "temperatureLow", "temperatureHigh", "temperatureOffset", "thermostatProgram"],
+      "options":        {
+                          "tuyaDataPoints":
+                          {
+                            "2":    [{"name": "operationMode", "type": "enum", "action": true}],
+                            "4":    [{"name": "targetTemperature", "type": "value", "divider": 10, "action": true}],
+                            "5":    [{"name": "temperature", "type": "value", "divider": 10}],
+                            "6":    [{"name": "battery", "type": "value"}],
+                            "7":    [{"name": "childLock", "type": "bool", "action": true}],
+                            "9":    [{"name": "temperatureHigh", "type": "value", "divider": 10, "action": true}],
+                            "10":   [{"name": "temperatureLow", "type": "value", "divider": 10, "action": true}],
+                            "21":   [{"name": "awayTemperature", "type": "value", "divider": 10, "action": true}],
+                            "24":   [{"name": "comfortTemperature", "type": "value", "divider": 10, "action": true}],
+                            "36":   [{"name": "frostProtection", "type": "bool", "action": true}],
+                            "37":   [{"name": "boost", "type": "bool", "action": true}],
+                            "38":   [{"name": "boostTimeout", "type": "value", "action": true}],
+                            "47":   [{"name": "temperatureOffset", "type": "value", "action": true}],
+                            "49":   [{"name": "running", "type": "bool"}]
+                          },
+                          "operationMode": {"enum": ["program", "away", "manual", "comfort"]},
+                          "targetTemperature": {"min": 5, "max": 35, "step": 0.5},
+                          "temperatureHigh": {"min": 15, "max": 45},
+                          "temperatureLow": {"min": 5, "max": 15},
+                          "awayTemperature": {"min": 5, "max": 35},
+                          "comfortTemperature": {"min": 5, "max": 35},
+                          "boostTimeout": {"min": 0, "max": 465, "step": 5},
+                          "temperatureOffset": {"min": -9, "max": 9},
+                          "thermostatProgram": "daily",
+                          "programDataPoints": [28, 29, 30, 31, 32, 33, 34],
+                          "runningStatus": true
+                        }
+    },
+    {
+      "description":    "TUYA TS0601 Radiator Thermostat (Type D)",
+      "modelNames":     ["_TZE204_ltwbm23f", "_TZE204_qyr2m29i"],
+      "properties":     ["tuyaDataPoints", "tuyaDailyThermostatProgram"],
+      "actions":        ["tuyaDataPoints", "tuyaDailyThermostatProgram"],
+      "exposes":        ["battery", "thermostat", "controlMode", "thrustMode", "position", "displayBrightness", "displayOrientation", "childLock", "comfortTemperature", "ecoTemperature", "awayTemperature", "temperatureLow", "temperatureHigh", "temperatureOffset", "thermostatProgram"],
+      "options":        {
+                          "tuyaDataPoints":
+                          {
+                            "2":    [{"name": "operationMode", "type": "enum", "action": true}],
+                            "3":    [{"name": "running", "type": "bool"}],
+                            "4":    [{"name": "targetTemperature", "type": "value", "divider": 10, "action": true}],
+                            "5":    [{"name": "temperature", "type": "value", "divider": 10}],
                             "6":    [{"name": "battery", "type": "value"}],
                             "7":    [{"name": "childLock", "type": "bool", "action": true}],
                             "9":    [{"name": "temperatureHigh", "type": "value", "divider": 10, "action": true}],
                             "10":   [{"name": "temperatureLow", "type": "value", "divider": 10, "action": true}],
                             "47":   [{"name": "temperatureOffset", "type": "value", "divider": 10, "action": true}],
-                            "114":  [{"name": "position", "type": "value"}],
+                            "110":  [{"name": "thrustMode", "type": "enum", "action": true}],
+                            "111":  [{"name": "displayBrightness", "type": "enum", "action": true}],
+                            "113":  [{"name": "displayOrientation", "type": "enum", "action": true}],
+                            "114":  [{"name": "position", "type": "value", "divider": 10}],
                             "119":  [{"name": "comfortTemperature", "type": "value", "divider": 10, "action": true}],
-                            "120":  [{"name": "ecoTemperature", "type": "value", "divider": 10, "action": true}]
+                            "120":  [{"name": "ecoTemperature", "type": "value", "divider": 10, "action": true}],
+                            "121":  [{"name": "awayTemperature", "type": "value", "divider": 10, "action": true}],
+                            "127":  [{"name": "controlMode", "type": "enum", "action": true}]
                           },
-                          "operationMode": {"enum": ["standby", "antifrost", "eco", "comfort", "program", "manual"]},
+                          "operationMode": {"enum": ["standby", "away", "eco", "comfort", "program", "force"]},
                           "targetTemperature": {"min": 5, "max": 35, "step": 0.5},
                           "temperatureHigh": {"min": 15, "max": 35},
-                          "temperatureLow": {"min": 0, "max": 15},
-                          "temperatureOffset": {"min": -30, "max": 30},
+                          "temperatureLow": {"min": 1, "max": 15},
+                          "temperatureOffset": {"min": -10, "max": 10, "step": 0.1},
+                          "thrustMode": {"type": "select", "enum": ["high", "medium", "low"]},
+                          "displayBrightness": {"type": "select", "enum": ["high", "medium", "low"]},
+                          "displayOrientation": {"type": "select", "enum": ["up", "down"]},
                           "position": {"type": "sensor", "icon": "mdi:valve"},
-                          "comfortTemperature": {"min": 5, "max": 30},
-                          "ecoTemperature": {"min": 5, "max": 30},
-                          "thermostatProgram": "daily",
-                          "prorgamDataPoints": [102, 103, 104, 105, 106, 107, 108],
+                          "comfortTemperature": {"min": 5, "max": 35},
+                          "ecoTemperature": {"min": 5, "max": 35},
+                          "awayTemperature": {"min": 5, "max": 35},
+                          "controlMode": {"type": "select", "enum": ["pid", "toggle"]},
+                          "thermostatProgram": "extended",
+                          "programDataPoints": [102, 103, 104, 105, 106, 107, 108],
                           "runningStatus": true
                         }
     },
@@ -446,9 +518,9 @@
                           "hysteresis": {"min": 0, "max": 5},
                           "temperatureHigh": {"min": 25, "max": 70},
                           "temperatureLow": {"min": 0, "max": 10},
-                          "ecoTemperature": {"min": 5, "max": 30},
+                          "ecoTemperature": {"min": 5, "max": 35},
                           "thermostatProgram": "daily",
-                          "prorgamDataPoints": [101, 105, 106, 107, 108, 109, 110],
+                          "programDataPoints": [101, 105, 106, 107, 108, 109, 110],
                           "runningStatus": true
                         }
     },
@@ -476,7 +548,7 @@
                             "108":  [{"name": "temperatureHigh", "type": "value", "action": true}],
                             "109":  [{"name": "temperatureLow", "type": "value", "action": true}]
                           },
-                          "operationMode": {"enum": ["program", "manual", "temporary", "holiday"]},
+                          "operationMode": {"enum": ["program", "manual", "temporary", "away"]},
                           "targetTemperature": {"min": 10, "max": 30},
                           "boostTimeout": {"min": 60, "max": 900, "step": 10},
                           "position": {"type": "sensor", "icon": "mdi:valve"},
@@ -687,6 +759,31 @@
                         }
     },
     {
+      "description":    "TUYA TS0601 Smart Irrigation Valve",
+      "modelNames":     ["_TZE200_7ytb3h8u", "_TZE200_a7sghmms", "_TZE204_7ytb3h8u", "_TZE204_a7sghmms", "_TZE284_7ytb3h8u"],
+      "properties":     ["tuyaDataPoints"],
+      "actions":        ["tuyaDataPoints"],
+      "exposes":        ["battery", "lock", "operationMode", "target", "interval", "count", "volume"],
+      "options":        {
+                          "tuyaDataPoints":
+                          {
+                            "1":    [{"name": "operationMode", "type": "bool", "action": true}],
+                            "2":    [{"name": "status", "type": "bool", "action": true}],
+                            "103":  [{"name": "count", "type": "value", "action": true}],
+                            "104":  [{"name": "target", "type": "value", "action": true}],
+                            "105":  [{"name": "interval", "type": "value", "action": true}],
+                            "108":  [{"name": "battery", "type": "value"}],
+                            "111":  [{"name": "volume", "type": "value"}]
+                          },
+                          "operationMode": {"enum": ["duration", "calpacity"]},
+                          "status": {"enum": ["off", "on"]},
+                          "count": {"type": "number", "min": 0, "max": 100},
+                          "target": {"type": "number", "min": 0, "max": 43200, "unut": "sec|L"},
+                          "interval": {"type": "number", "min": 0, "max": 43200, "unut": "sec"},
+                          "lock": "valve"
+                        }
+    },
+    {
       "description":    "TUYA TS0601 Garage Door Controller",
       "modelNames":     ["_TZE200_wfxuhoea", "_TZE200_nklqjk62", "_TZE204_nklqjk62"],
       "properties":     ["tuyaDataPoints"],
@@ -822,7 +919,7 @@
       "modelNames":     ["_TZE200_1ibpyhdc", "_TZE200_3towulqd", "_TZE200_bh3n6gk8", "_TZE200_gjldowol", "_TZE200_ttcovulf"],
       "properties":     ["tuyaDataPoints"],
       "actions":        ["tuyaDataPoints"],
-      "exposes":        ["battery", "occupancy", "illuminance", "sensitivityMode", "timeoutMode"],
+      "exposes":        ["battery", "occupancy", "illuminance", "sensitivityMode", "timeoutMode", "illuminanceDelay"],
       "options":        {
                           "tuyaDataPoints":
                           {
@@ -830,8 +927,10 @@
                             "4":    [{"name": "battery", "type": "value"}],
                             "9":    [{"name": "sensitivityMode", "type": "enum", "action": true}],
                             "10":   [{"name": "timeoutMode", "type": "enum", "action": true}],
-                            "12":   [{"name": "illuminance", "type": "value"}]
-                          }
+                            "12":   [{"name": "illuminance", "type": "value"}],
+                            "102":  [{"name": "illuminanceDelay", "type": "value", "action": true}]
+                          },
+                          "illuminanceDelay": {"min": 1, "max": 720}
                         }
     },
     {
@@ -861,7 +960,7 @@
     },
     {
       "description":    "TUYA TS0601 Human Presence Sensor (Type B)",
-      "modelNames":     ["_TZE204_sxm7l9xa"],
+      "modelNames":     ["_TZE204_e5m9c5hl", "_TZE204_sxm7l9xa"],
       "properties":     ["tuyaDataPoints"],
       "actions":        ["tuyaDataPoints"],
       "exposes":        ["occupancy", "targetDistance", "illuminance", "sensitivity", "distanceMin", "distanceMax", "detectionDelay", "fadingTime"],
@@ -1040,6 +1139,52 @@
     },
     {
       "description":    "TUYA TS0601 Temperature and Humidity Sensor (Type A)",
+      "modelNames":     ["_TZE200_44af8vyi", "_TZE200_bq5c8xfe"],
+      "properties":     ["tuyaDataPoints"],
+      "actions":        ["tuyaDataPoints"],
+      "exposes":        ["battery", "temperature", "humidity"],
+      "options":        {
+                          "tuyaDataPoints":
+                          {
+                            "1":    [{"name": "temperature", "type": "value", "divider": 10}],
+                            "2":    [{"name": "humidity", "type": "value"}],
+                            "4":    [{"name": "battery", "type": "value"}]
+                          }
+                        }
+    },
+    {
+      "description":    "TUYA TS0601 Temperature and Humidity Sensor (Type B)",
+      "modelNames":     ["_TZE200_bjawzodf", "_TZE200_zl1kmjqx"],
+      "properties":     ["tuyaDataPoints"],
+      "actions":        ["tuyaDataPoints"],
+      "exposes":        ["battery", "temperature", "humidity"],
+      "options":        {
+                          "tuyaDataPoints":
+                          {
+                            "1":    [{"name": "temperature", "type": "value", "divider": 10}],
+                            "2":    [{"name": "humidity", "type": "value", "divider": 10}],
+                            "4":    [{"name": "battery", "type": "value"}]
+                          }
+                        }
+    },
+    {
+      "description":    "TUYA TS0601 Temperature and Humidity Sensor (Type C)",
+      "modelNames":     ["_TZE200_qyflbnbj", "_TZE204_qyflbnbj", "_TZE284_qyflbnbj"],
+      "properties":     ["tuyaDataPoints"],
+      "actions":        ["tuyaDataPoints"],
+      "exposes":        ["batteryStatus", "temperature", "humidity"],
+      "options":        {
+                          "tuyaDataPoints":
+                          {
+                            "1":    [{"name": "temperature", "type": "value", "divider": 10}],
+                            "2":    [{"name": "humidity", "type": "value"}],
+                            "3":    [{"name": "batteryStatus", "type": "enum"}]
+                          },
+                          "batteryStatus": {"enum": ["low", "medium", "high"]}
+                        }
+    },
+    {
+      "description":    "TUYA TS0601 Temperature and Humidity Sensor (Type D)",
       "modelNames":     ["_TZE200_a8sdabtg", "_TZE200_dikkika5", "_TZE200_qoy0ekbd", "_TZE200_znbl8dj5"],
       "properties":     ["tuyaDataPoints"],
       "actions":        ["tuyaDataPoints"],
@@ -1058,7 +1203,7 @@
                         }
     },
     {
-      "description":    "TUYA TS0601 Temperature and Humidity Sensor (Type B)",
+      "description":    "TUYA TS0601 Temperature and Humidity Sensor (Type E)",
       "modelNames":     ["_TZE200_9yapgbuv", "_TZE200_cirvgep4", "_TZE200_upagmta9", "_TZE200_yjjdcqsq", "_TZE204_upagmta9", "_TZE204_yjjdcqsq"],
       "properties":     ["tuyaDataPoints"],
       "actions":        ["tuyaDataPoints"],
@@ -1076,7 +1221,7 @@
                         }
     },
     {
-      "description":    "TUYA TS0601 Temperature and Humidity Sensor (Type C)",
+      "description":    "TUYA TS0601 Temperature and Humidity Sensor (Type F)",
       "modelNames":     ["_TZE200_c7emyjom", "_TZE200_eanjj2pa", "_TZE200_locansqn", "_TZE200_lve3dvpy", "_TZE200_qrztc3ev", "_TZE200_snloy4rw", "_TZE200_vvmbj46n"],
       "properties":     ["tuyaDataPoints"],
       "actions":        ["tuyaDataPoints"],
@@ -1317,11 +1462,42 @@
       "modelNames":     ["_TZ3000_5k5vh43t", "_TZ3000_gszjt2xx", "_TZ3000_m0vaazab", "_TZ3000_misw04hq", "_TZ3000_nkkl7uzv", "_TZ3000_nlsszmzl", "_TZ3000_ufttklsz", "_TZ3000_wlquqiiz"]
     },
     {
+      "description":    "TUYA TS0225 Dual Band Human Presence Sensor",
+      "modelNames":     ["_TZE200_2aaelwxk"],
+      "properties":     ["tuyaDataPoints"],
+      "actions":        ["tuyaDataPoints"],
+      "exposes":        ["occupancy", "illuminance", "motionStatus",  "smallMotionSensitivity", "smallMotionDistance", "mediumMotionSensitivity", "mediumMotionDistance", "largeMotionSensitivity", "largeMotionDistance", "fadingTime", "indicator"],
+      "options":        {
+                          "tuyaDataPoints":
+                          {
+                            "1":    [{"name": "occupancy", "type": "bool"}],
+                            "2":    [{"name": "largeMotionSensitivity", "type": "value", "action": true}],
+                            "4":    [{"name": "largeMotionDistance", "type": "value", "divider": 100, "action": true}],
+                            "101":  [{"name": "motionStatus", "type": "enum"}],
+                            "102":  [{"name": "fadingTime", "type": "value", "action": true}],
+                            "104":  [{"name": "mediumMotionDistance", "type": "value", "divider": 100, "action": true}],
+                            "105":  [{"name": "mediumMotionSensitivity", "type": "value", "action": true}],
+                            "106":  [{"name": "illuminance", "type": "value"}],
+                            "107":  [{"name": "indicator", "type": "bool", "action": true}],
+                            "108":  [{"name": "smallMotionDistance", "type": "value", "divider": 100, "action": true}],
+                            "109":  [{"name": "smallMotionSensitivity", "type": "value", "action": true}]
+                          },
+                          "largeMotionSensitivity": {"type": "number", "min": 0, "max": 10, "icon": "mdi:dumbbell"},
+                          "largeMotionDistance": {"type": "number", "min": 0, "max": 10, "step": 0.01, "unit": "m", "icon": "mdi:arrow-left-right"},
+                          "motionStatus": {"enum": ["none", "large", "medium", "small"]},
+                          "fadingTime": {"min": 0, "max": 28800, "step": 10},
+                          "mediumMotionDistance": {"type": "number", "min": 0, "max": 6, "step": 0.01, "unit": "m", "icon": "mdi:arrow-left-right"},
+                          "mediumMotionSensitivity": {"type": "number", "min": 0, "max": 10, "icon": "mdi:dumbbell"},
+                          "smallMotionDistance": {"type": "number", "min": 0, "max": 6, "step": 0.01, "unit": "m", "icon": "mdi:arrow-left-right"},
+                          "smallMotionSensitivity": {"type": "number", "min": 0, "max": 10, "icon": "mdi:dumbbell"}
+                        }
+    },
+    {
       "description":    "TUYA TS000F 1-Channel Relay with Temperature and Humidity Sensor",
       "modelNames":     ["_TZ3218_7fiyo3kv"],
-      "properties":     ["status", "tuyaDataPoints"],
-      "actions":        ["status", "tuyaDataPoints"],
-      "exposes":        ["switch", "temperature", "humidity", "temperatureOffset", "humidityOffset"],
+      "properties":     ["status", "powerOnStatus","tuyaDataPoints"],
+      "actions":        ["status", "powerOnStatus","tuyaDataPoints"],
+      "exposes":        ["switch", "powerOnStatus","temperature", "humidity", "temperatureOffset", "humidityOffset"],
       "options":        {
                           "tuyaDataPoints":
                           {
@@ -1331,8 +1507,34 @@
                             "109":  [{"name": "humidityOffset", "type": "value", "action": true}]
                           },
                           "temperatureOffset": {"min": -10, "max": 10, "step": 0.1},
-                          "humidityOffset": {"min": -10, "max": 10}
+                          "humidityOffset": {"min": -10, "max": 10},
+                          "powerOnStatus": {"enum": ["off", "on", "previous"]}
                         }
+    },
+    {
+      "description":    "TUYA TS000F 4-Channel Relay with Temperature and Humidity Sensor",
+      "modelNames":     ["_TZ3218_ya5d6wth"],
+      "properties":     ["tuyaDataPoints"],
+      "actions":        ["tuyaDataPoints"],
+      "exposes":        ["temperature", "humidity"],
+      "options":        {
+                          "tuyaDataPoints":
+                          {
+                            "102":  [{"name": "temperature", "type": "value", "divider": 10}],
+                            "103":  [{"name": "humidity", "type": "value"}]
+                          }
+                        },
+      "endpointId":     1
+    },
+    {
+      "modelNames":     ["_TZ3218_ya5d6wth"],
+      "properties":     ["status", "customAttributes"],
+      "actions":        ["status", "customAttributes"],
+      "bindings":       ["status"],
+      "reportings":     ["status"],
+      "exposes":        ["switch", "powerOnStatus"],
+      "options":        {"customAttributes": {"powerOnStatus": {"type": "enum", "clusterId": 57345, "attributeId": 53264, "dataType": 48, "action": true}}, "powerOnStatus": {"enum": ["off", "on", "previous"]}},
+      "endpointId":     [1, 2, 3, 4]
     },
     {
       "description":    "TUYA TS0001 Fingerbot",
@@ -1362,7 +1564,7 @@
     },
     {
       "description":    "TUYA TS0001/TS0011 1-Channel Relay",
-      "modelNames":     ["_TZ3000_3a9beq8a", "_TZ3000_46t1rvdu", "_TZ3000_4rbqgcuv", "_TZ3000_5ng23zjs", "_TZ3000_6axxqqi2", "_TZ3000_aghwaexm", "_TZ3000_ark8nv4y", "_TZ3000_fdxihpp7", "_TZ3000_gjrubzje", "_TZ3000_gzvniqjb", "_TZ3000_hafsqare", "_TZ3000_hbxsdd6k", "_TZ3000_hktqahrq", "_TZ3000_ji4araar", "_TZ3000_m9af2l6g", "_TZ3000_majwnphg", "_TZ3000_mkmb4sms", "_TZ3000_mx3vgyea", "_TZ3000_npzfdcof", "_TZ3000_q6a3tepg", "_TZ3000_qmi1cfuq", "_TZ3000_qsp2pwtf", "_TZ3000_rmjr4ufz", "_TZ3000_skueekg3", "_TZ3000_tqlv4ug4", "_TZ3000_txpirhfq", "_TZ3000_tygpxwqa", "_TZ3000_v7gnj3ad", "_TZ3000_v7sopte0", "_TZ3000_zw7yf6yk"],
+      "modelNames":     ["_TZ3000_3a9beq8a", "_TZ3000_46t1rvdu", "_TZ3000_4rbqgcuv", "_TZ3000_5ng23zjs", "_TZ3000_6axxqqi2", "_TZ3000_aghwaexm", "_TZ3000_ark8nv4y", "_TZ3000_fdxihpp7", "_TZ3000_gjrubzje", "_TZ3000_gzvniqjb", "_TZ3000_hafsqare", "_TZ3000_hbxsdd6k", "_TZ3000_hktqahrq", "_TZ3000_ji4araar", "_TZ3000_m9af2l6g", "_TZ3000_majwnphg", "_TZ3000_mkmb4sms", "_TZ3000_mx3vgyea", "_TZ3000_npzfdcof", "_TZ3000_p26flek3", "_TZ3000_q6a3tepg", "_TZ3000_qmi1cfuq", "_TZ3000_qsp2pwtf", "_TZ3000_rmjr4ufz", "_TZ3000_skueekg3", "_TZ3000_tqlv4ug4", "_TZ3000_txpirhfq", "_TZ3000_tygpxwqa", "_TZ3000_v7gnj3ad", "_TZ3000_v7sopte0", "_TZ3000_zw7yf6yk"],
       "properties":     ["status", "tuyaSwitchType", "tuyaPowerOnStatus"],
       "actions":        ["status", "tuyaSwitchType", "tuyaPowerOnStatus"],
       "bindings":       ["status"],
@@ -1377,7 +1579,7 @@
       "actions":        ["status", "tuyaIndicatorMode", "tuyaPowerOnStatus"],
       "bindings":       ["status"],
       "reportings":     ["status"],
-      "exposes":        ["switch", "indicatorMode", "powerOnStatus"],
+      "exposes":        ["switch", "powerOnStatus", "indicatorMode"],
       "options":        {"powerOnStatus": {"enum": ["off", "on", "previous"]}, "skipAttributeRead": true}
     },
     {
@@ -1403,7 +1605,7 @@
       "modelNames":     ["TS0002", "TS0012"],
       "properties":     ["tuyaIndicatorMode", "tuyaPowerOnStatus"],
       "actions":        ["tuyaIndicatorMode", "tuyaPowerOnStatus"],
-      "exposes":        ["indicatorMode", "powerOnStatus"],
+      "exposes":        ["powerOnStatus", "indicatorMode"],
       "options":        {"powerOnStatus": {"enum": ["off", "on", "previous"]}, "skipAttributeRead": true},
       "endpointId":     1
     },
@@ -1439,7 +1641,7 @@
       "modelNames":     ["TS0003", "TS0013"],
       "properties":     ["tuyaIndicatorMode", "tuyaPowerOnStatus"],
       "actions":        ["tuyaIndicatorMode", "tuyaPowerOnStatus"],
-      "exposes":        ["indicatorMode", "powerOnStatus"],
+      "exposes":        ["powerOnStatus", "indicatorMode"],
       "options":        {"powerOnStatus": {"enum": ["off", "on", "previous"]}, "skipAttributeRead": true},
       "endpointId":     1
     },
@@ -1494,7 +1696,7 @@
       "modelNames":     ["TS0004", "TS0014"],
       "properties":     ["tuyaIndicatorMode", "tuyaPowerOnStatus"],
       "actions":        ["tuyaIndicatorMode", "tuyaPowerOnStatus"],
-      "exposes":        ["indicatorMode", "powerOnStatus"],
+      "exposes":        ["powerOnStatus", "indicatorMode"],
       "options":        {"powerOnStatus": {"enum": ["off", "on", "previous"]}, "skipAttributeRead": true},
       "endpointId":     1
     },
@@ -1512,7 +1714,7 @@
       "modelNames":     ["TS0006"],
       "properties":     ["tuyaIndicatorMode", "tuyaPowerOnStatus"],
       "actions":        ["tuyaIndicatorMode", "tuyaPowerOnStatus"],
-      "exposes":        ["indicatorMode", "powerOnStatus"],
+      "exposes":        ["powerOnStatus", "indicatorMode"],
       "options":        {"powerOnStatus": {"enum": ["off", "on", "previous"]}, "skipAttributeRead": true},
       "endpointId":     1
     },
@@ -1597,9 +1799,31 @@
       "endpointId":     [1, 2]
     },
     {
+      "description":    "TUYA TS011F Smart Plug with USB",
+      "modelNames":     ["_TZ3000_2xlvlnez", "_TZ3000_cymsnfvf"],
+      "properties":     ["tuyaChildLock", "tuyaIndicatorMode", "tuyaPowerOnStatus"],
+      "actions":        ["tuyaChildLock", "tuyaIndicatorMode", "tuyaPowerOnStatus"],
+      "exposes":        ["powerOnStatus", "indicatorMode", "childLock"],
+      "options":        {"powerOnStatus": {"enum": ["off", "on", "previous"]}},
+      "endpointId":     1
+    },
+    {
+      "modelNames":     ["_TZ3000_2xlvlnez", "_TZ3000_cymsnfvf"],
+      "properties":     ["status"],
+      "actions":        ["status"],
+      "bindings":       ["status"],
+      "exposes":        ["switch"],
+      "endpointId":     [1, 2]
+    },
+
+    {
       "description":    "TUYA TS011F 4-Channel Smart Plug with USB",
       "modelNames":     ["_TZ3000_cfnprab5", "_TZ3000_o005nuxx"],
-      "options":        {"endpointName": {"5": "USB"}}
+      "properties":     ["tuyaChildLock", "tuyaPowerOnStatus"],
+      "actions":        ["tuyaChildLock", "tuyaPowerOnStatus"],
+      "exposes":        ["powerOnStatus", "childLock"],
+      "options":        {"powerOnStatus": {"enum": ["off", "on", "previous"]}},
+      "endpointId":     1
     },
     {
       "modelNames":     ["_TZ3000_cfnprab5", "_TZ3000_o005nuxx"],
@@ -1611,11 +1835,11 @@
     },
     {
       "description":    "TUYA TS011F Smart Plug with Power Monitoring Polling",
-      "modelNames":     ["_TZ3000_0yxeawjt", "_TZ3000_cphmq0q7", "_TZ3000_okaz9tjs", "_TZ3000_ps3dmato", "_TZ3000_u5u4cakc"],
+      "modelNames":     ["_TZ3000_0yxeawjt", "_TZ3000_cphmq0q7", "_TZ3000_okaz9tjs", "_TZ3000_ps3dmato", "_TZ3000_u5u4cakc", "_TZ3000_wzmuk9ai"],
       "properties":     ["status", "energy", "voltage", "current", "power", "tuyaChildLock", "tuyaIndicatorMode", "tuyaPowerOnStatus"],
       "actions":        ["status", "tuyaChildLock", "tuyaIndicatorMode", "tuyaPowerOnStatus"],
       "polls":          ["status", "energy", "voltage", "current", "power"],
-      "exposes":        ["switch", "indicatorMode", "powerOnStatus", "childLock", "energy", "voltage", "current", "power"],
+      "exposes":        ["switch", "powerOnStatus", "indicatorMode", "childLock", "energy", "voltage", "current", "power"],
       "options":        {"switch": "outlet", "powerOnStatus": {"enum": ["off", "on", "previous"]}, "energyDivider": 100, "currentDivider": 1000, "pollInterval": 30}
     },
     {
@@ -1625,7 +1849,7 @@
       "actions":        ["status", "tuyaChildLock", "tuyaIndicatorMode", "tuyaPowerOnStatus"],
       "bindings":       ["status", "energy", "power"],
       "reportings":     ["status", "energy", "voltage", "current", "power"],
-      "exposes":        ["switch", "indicatorMode", "powerOnStatus", "childLock", "energy", "voltage", "current", "power"],
+      "exposes":        ["switch", "powerOnStatus", "indicatorMode", "childLock", "energy", "voltage", "current", "power"],
       "options":        {"switch": "outlet", "powerOnStatus": {"enum": ["off", "on", "previous"]}, "energyDivider": 100, "currentDivider": 1000}
     },
     {
@@ -1634,7 +1858,7 @@
       "properties":     ["status", "energy", "voltage", "current", "power", "tuyaIndicatorMode", "tuyaPowerOnStatus"],
       "actions":        ["status", "tuyaIndicatorMode", "tuyaPowerOnStatus"],
       "polls":          ["energy", "voltage", "current", "power"],
-      "exposes":        ["switch", "indicatorMode", "powerOnStatus", "energy", "voltage", "current", "power"],
+      "exposes":        ["switch", "powerOnStatus", "indicatorMode", "energy", "voltage", "current", "power"],
       "options":        {"switch": "outlet", "powerOnStatus": {"enum": ["off", "on", "previous"]}, "energyDivider": 100, "currentDivider": 1000, "pollInterval": 15}
     },
     {
@@ -1741,7 +1965,7 @@
     },
     {
       "description":    "TUYA TS0202 Motion Sensor",
-      "modelNames":     ["_TYZB01_2b8f6cio", "_TYZB01_71kfvvma", "_TYZB01_dl7cejts", "_TYZB01_dr6sduka", "_TYZB01_ef5xlc9q", "_TYZB01_hqbdru35", "_TYZB01_qjqgmqxr", "_TYZB01_rwb0hxtf", "_TYZB01_tv3wxhcz", "_TYZB01_vwqnz1sn", "_TYZB01_zwvaj5wy", "_TZ3000_bsvqrxru", "_TZ3000_h4wnrtck", "_TZ3000_hgu1dlak", "_TZ3000_jmrgyl7o", "_TZ3000_kmh5qpmb", "_TZ3000_lf56vpxj", "_TZ3000_mmtwjmaq", "_TZ3000_nss8amz9", "_TZ3000_otvn3lne", "_TZ3000_qomxlryd", "_TZ3000_sr0vaafi", "_TZ3000_tiwq83wk", "_TZ3000_ykwcwxmz", "_TZ3040_bb6xaihh", "_TZ3040_wqmtjsyk", "_TZE200_bq5c8xfe"],
+      "modelNames":     ["_TYZB01_2b8f6cio", "_TYZB01_71kfvvma", "_TYZB01_dl7cejts", "_TYZB01_dr6sduka", "_TYZB01_ef5xlc9q", "_TYZB01_hqbdru35", "_TYZB01_qjqgmqxr", "_TYZB01_rwb0hxtf", "_TYZB01_tv3wxhcz", "_TYZB01_vwqnz1sn", "_TYZB01_zwvaj5wy", "_TZ3000_bsvqrxru", "_TZ3000_h4wnrtck", "_TZ3000_hgu1dlak", "_TZ3000_jmrgyl7o", "_TZ3000_kmh5qpmb", "_TZ3000_lf56vpxj", "_TZ3000_mmtwjmaq", "_TZ3000_nss8amz9", "_TZ3000_otvn3lne", "_TZ3000_qomxlryd", "_TZ3000_sr0vaafi", "_TZ3000_tiwq83wk", "_TZ3000_ykwcwxmz", "_TZ3040_bb6xaihh", "_TZ3040_wqmtjsyk"],
       "properties":     ["batteryPercentage", "iasOccupancy"],
       "bindings":       ["battery"],
       "reportings":     ["batteryPercentage"],
@@ -1791,12 +2015,35 @@
                         }
     },
     {
+      "description":    "TUYA RH3040 Motion Sensor",
+      "modelNames":     ["RH3040"],
+      "properties":     ["batteryPercentage", "iasOccupancy"],
+      "exposes":        ["battery", "occupancy", "batteryLow", "tamper"]
+    },
+    {
       "description":    "TUYA TS0207 Water Leak Sensor",
-      "modelNames":     ["_TZ3000_c8bqthpo", "_TZ3000_d16y6col", "_TZ3000_it1hm1cr", "_TZ3000_k4ej3ww2", "_TZ3000_kstbkt6a", "_TZ3000_kyb656no", "_TZ3000_mugyhz0q", "_TZ3000_ocjlo4ea", "_TZ3000_qhozxs2b", "_TYZB01_sqmd19i1", "_TZ3000_t6jriawg", "_TZ3000_upgcbody"],
+      "modelNames":     ["_TZ3000_85czd6fy", "_TZ3000_c8bqthpo", "_TZ3000_d16y6col", "_TZ3000_it1hm1cr", "_TZ3000_k4ej3ww2", "_TZ3000_kstbkt6a", "_TZ3000_kyb656no", "_TZ3000_mugyhz0q", "_TZ3000_ocjlo4ea", "_TZ3000_qhozxs2b", "_TYZB01_sqmd19i1", "_TZ3000_t6jriawg", "_TZ3000_upgcbody"],
       "properties":     ["batteryPercentage", "iasWaterLeak"],
       "bindings":       ["battery"],
       "reportings":     ["batteryPercentage"],
       "exposes":        ["battery", "waterLeak", "batteryLow", "tamper"]
+    },
+    {
+      "description":    "TUYA TS0210 Vibration Sensor",
+      "modelNames":     ["TS0210"],
+      "properties":     ["batteryPercentage", "iasVibration"],
+      "bindings":       ["battery"],
+      "reportings":     ["batteryPercentage"],
+      "exposes":        ["battery", "vibration", "batteryLow", "tamper"],
+      "options":        {"vibrationResetTimeout": 60}
+    },
+    {
+      "description":    "TUYA TS0222 Illuminance Sensor",
+      "modelNames":     ["_TYZB01_4mdqxxnn", "_TZ3000_8uxxzz4b", "_TZ3000_9kbbfeho", "_TZ3000_do6txrcw", "_TZ3000_hy6ncvmw", "_TZ3000_l6rsaipj", "_TYZB01_m6ec2pgj"],
+      "properties":     ["batteryPercentage", "illuminance"],
+      "bindings":       ["battery"],
+      "reportings":     ["batteryPercentage"],
+      "exposes":        ["battery", "illuminance"]
     },
     {
       "description":    "TUYA TS0201 Temperature and Humidity Sensor (Type A)",
@@ -1806,7 +2053,7 @@
     },
     {
       "description":    "TUYA TS0201 Temperature and Humidity Sensor (Type B)",
-      "modelNames":     ["_TZ3000_itnrsufe", "_TZ3210_ncw88jfq", "_TZ3000_ywagc4rj"],
+      "modelNames":     ["_TZ3000_3xduwekl", "_TZ3000_itnrsufe", "_TZ3210_ncw88jfq", "_TZ3000_ywagc4rj"],
       "properties":     ["batteryPercentage", "temperature", "humidity"],
       "exposes":        ["battery", "temperature", "humidity"],
       "options":        {"humidityDivider": 10}

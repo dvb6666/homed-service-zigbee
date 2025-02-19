@@ -4,9 +4,9 @@
     {
       "description":    "Aqara E1 Radiator Thermostat SRTS-A01",
       "modelNames":     ["lumi.airrtc.agl001"],
-      "properties":     ["thermostat", "customAttributes"],
-      "actions":        ["thermostat", "customAttributes"],
-      "exposes":        ["battery", "thermostat", "windowOpen", "windowDetection", "childLock", "awayTemperature", "sensorType"],
+      "properties":     ["thermostat", "lumiData", "customAttributes"],
+      "actions":        ["thermostat", "lumiRadiatorThermostat", "customAttributes"],
+      "exposes":        ["battery", "thermostat", "windowOpen", "windowDetection", "childLock", "awayTemperature", "sensorType", "externalTemperature"],
       "options":        {
                           "customAttributes":
                           {
@@ -21,14 +21,16 @@
                           "temperatureOffset": {"min": -2.5, "max": 2.5, "step" : 0.1},
                           "systemMode": {"enum": ["off", "heat"]},
                           "operationMode": {"enum": ["manual", "away", "program"]},
-                          "awayTemperature": {"min": 5, "max": 30, "step": 0.5}
+                          "awayTemperature": {"min": 5, "max": 30, "step": 0.5},
+                          "sensorType": {"enum": ["internal", "external"]},
+                          "externalTemperature": {"type": "number", "min": 0, "max": 55, "step": 0.1, "icon": "mdi:thermometer"}
                         }
     },
     {
       "description":    "Aqara S3 Thermostat ZNWKQ11LM",
       "modelNames":     ["lumi.airrtc.pcacn2"],
       "properties":     ["lumiData", "humidity"],
-      "actions":        ["lumiThermostat", "lumiLanguage"],
+      "actions":        ["lumiElectricThermostat", "lumiLanguage"],
       "exposes":        ["thermostat", "fanMode", "humidity", "language"],
       "options":        {
                           "targetTemperature": {"min": 16, "max": 32, "step": 0.5},
@@ -203,8 +205,8 @@
       "endpointId":     [41, 42, 43, 51, 52, 53, 61]
     },
     {
-      "description":    "Aqara E1 1-Channel Wall Switch QBKG38LM or QBKG40LM",
-      "modelNames":     ["lumi.switch.b1nc01", "lumi.switch.b1lc04"],
+      "description":    "Aqara E1/H1 1-Channel Wall Switch QBKG38LM, QBKG40LM or WS-EUK01",
+      "modelNames":     ["lumi.switch.l1aeu1", "lumi.switch.b1nc01", "lumi.switch.b1lc04"],
       "properties":     ["status", "lumiData"],
       "actions":        ["status", "lumiIndicatorMode", "lumiSwitchMode", "lumiSwitchStatusMemory"],
       "exposes":        ["switch", "action", "temperature", "indicatorMode", "switchMode", "statusMemory"],
@@ -212,18 +214,18 @@
       "endpointId":     1
     },
     {
-      "modelNames":     ["lumi.switch.b1nc01", "lumi.switch.b1lc04"],
+      "modelNames":     ["lumi.switch.l1aeu1", "lumi.switch.b1nc01", "lumi.switch.b1lc04"],
       "properties":     ["lumiSwitchAction"],
       "options":        {"action": {"enum": ["singleClick", "doubleClick"]}},
       "endpointId":     41
     },
     {
-      "description":    "Aqara E1 2-Channel Wall Switch QBKG39LM or QBKG41LM",
-      "modelNames":     ["lumi.switch.b2nc01", "lumi.switch.b2lc04"],
+      "description":    "Aqara E1/H1 2-Channel Wall Switch QBKG39LM, QBKG41LM or WS-EUK02",
+      "modelNames":     ["lumi.switch.l2aeu1", "lumi.switch.b2nc01", "lumi.switch.b2lc04"],
       "options":        {"endpointName": {"1": "Left", "2": "Right", "41": "Left", "42": "Right", "51": "Both"}}
     },
     {
-      "modelNames":     ["lumi.switch.b2nc01", "lumi.switch.b2lc04"],
+      "modelNames":     ["lumi.switch.l2aeu1", "lumi.switch.b2nc01", "lumi.switch.b2lc04"],
       "properties":     ["lumiData"],
       "actions":        ["lumiIndicatorMode", "lumiSwitchStatusMemory"],
       "exposes":        ["temperature", "indicatorMode", "statusMemory"],
@@ -231,7 +233,7 @@
       "endpointId":     1
     },
     {
-      "modelNames":     ["lumi.switch.b2nc01", "lumi.switch.b2lc04"],
+      "modelNames":     ["lumi.switch.l2aeu1", "lumi.switch.b2nc01", "lumi.switch.b2lc04"],
       "properties":     ["status", "lumiData"],
       "actions":        ["status", "lumiSwitchMode"],
       "exposes":        ["switch", "switchMode"],
@@ -239,7 +241,7 @@
       "endpointId":     [1, 2]
     },
     {
-      "modelNames":     ["lumi.switch.b2nc01", "lumi.switch.b2lc04"],
+      "modelNames":     ["lumi.switch.l2aeu1", "lumi.switch.b2nc01", "lumi.switch.b2lc04"],
       "properties":     ["lumiSwitchAction"],
       "exposes":        ["action"],
       "options":        {"action": {"enum": ["singleClick", "doubleClick"]}},
@@ -278,7 +280,7 @@
       "modelNames":     ["lumi.switch.n0acn2", "lumi.switch.n0agl1"],
       "exposes":        ["switch", "energy", "voltage", "current", "power", "temperature", "statusMemory", "switchType"],
       "options":        {
-                          "customAttributes_1": {"switchType": {"type": "enum", "clusterId": 64704, "manufacturerCode": 4447, "attributeId": 10, "dataType": 32, "action": true}},
+                          "customAttributes": {"switchType": {"type": "enum", "clusterId": 64704, "manufacturerCode": 4447, "attributeId": 10, "dataType": 32, "action": true}},
                           "switchType": {"enum": {"1": "toggle", "2": "momentary"}},
                           "temperature": {"diagnostic": true},
                           "powerSource": 1
@@ -300,8 +302,8 @@
       "description":    "Aqara 2-Channel Relay LLKZMK11LM",
       "modelNames":     ["lumi.relay.c2acn01"],
       "properties":     ["lumiBasic", "lumiPower", "customAttributes"],
-      "actions":        ["customAttributes"],
-      "exposes":        ["energy", "voltage", "current", "power", "temperature", "interlock"],
+      "actions":        ["lumiBasicStatusMemory", "customAttributes"],
+      "exposes":        ["energy", "voltage", "current", "power", "temperature", "interlock", "statusMemory"],
       "options":        {
                           "customAttributes": {"interlock": {"type": "bool", "clusterId": 16, "manufacturerCode": 4447, "attributeId": 65286, "dataType": 16, "action": true}},
                           "temperature": {"diagnostic": true}
@@ -319,10 +321,10 @@
       "description":    "Xiaomi 10A Smart Plug ZNCZ02LM or ZNCZ03LM",
       "modelNames":     ["lumi.plug", "lumi.plug.mitw01"],
       "properties":     ["status", "lumiBasic", "lumiPower"],
-      "actions":        ["status"],
+      "actions":        ["status", "lumiBasicStatusMemory"],
       "bindings":       ["status"],
       "reportings":     ["status"],
-      "exposes":        ["switch", "energy", "power", "temperature"],
+      "exposes":        ["switch", "energy", "power", "temperature", "statusMemory"],
       "options":        {"switch": "outlet", "temperature": {"diagnostic": true}}
     },
     {
@@ -353,11 +355,19 @@
       "options":        {"light": ["level", "colorTemperature"], "colorTemperature": {"min": 153, "max": 370}}
     },
     {
+      "description":    "Aqara Dimmable Bulb with Changable Color Temperature ZNLDP13LM",
+      "modelNames":     ["lumi.light.acn014", "lumi.light.cwac02"],
+      "properties":     ["status", "level", "colorTemperature", "lumiData"],
+      "actions":        ["status", "level", "colorTemperature", "lumiSwitchStatusMemory"],
+      "exposes":        ["light", "statusMemory"],
+      "options":        {"light": ["level", "colorTemperature"], "colorTemperature": {"min": 153, "max": 370}}
+    },
+    {
       "description":    "Aqara Smart Celling Light ZNXDD01LM",
       "modelNames":     ["lumi.light.acn003"],
-      "properties":     ["status", "powerOnStatus", "level", "colorTemperature"],
-      "actions":        ["status", "powerOnStatus", "level", "colorTemperature"],
-      "exposes":        ["light", "powerOnStatus"],
+      "properties":     ["status", "level", "colorTemperature", "lumiData"],
+      "actions":        ["status", "level", "colorTemperature", "lumiSwitchStatusMemory"],
+      "exposes":        ["light", "statusMemory"],
       "options":        {"light": ["level", "colorTemperature"], "colorTemperature": {"min": 153, "max": 370}}
     },
     {

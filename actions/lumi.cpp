@@ -1,7 +1,7 @@
 #include <QtEndian>
 #include "lumi.h"
 
-QByteArray ActionsLUMI::PresenceSensor::request(const QString &name, const QVariant &data)
+QVariant ActionsLUMI::PresenceSensor::request(const QString &name, const QVariant &data)
 {
     int index = m_actions.indexOf(name);
 
@@ -31,7 +31,69 @@ QByteArray ActionsLUMI::PresenceSensor::request(const QString &name, const QVari
     return QByteArray();
 }
 
-QByteArray ActionsLUMI::Thermostat::request(const QString &name, const QVariant &data)
+QVariant ActionsLUMI::RadiatorThermostat::request(const QString &name, const QVariant &data)
+{
+    QByteArray sensor = ieeeAddress().append(QByteArray::fromHex("00158d000ab7156d")), value;
+    QList <QVariant> list;
+
+    switch (m_actions.indexOf(name))
+    {
+        case 0: // sensorType
+        {
+            quint32 timestamp = qToBigEndian <quint32> (QDateTime::currentSecsSinceEpoch());
+
+            if (data.toString() == "external")
+            {
+                value = QByteArray(reinterpret_cast <char*> (&timestamp), sizeof(timestamp)).append(QByteArray::fromHex("3d04")).append(ieeeAddress()).append(sensor).append(QByteArray::fromHex("00010055130a0200006404cec2b6c80000000000013d6465"));
+                list.append(writeAttributeRequest(m_transactionId++, m_manufacturerCode, 0xFFF2, DATA_TYPE_OCTET_STRING, header(static_cast <quint8> (value.length()), 0x12, 0x02).append(value)));
+
+                value = QByteArray(reinterpret_cast <char*> (&timestamp), sizeof(timestamp)).append(QByteArray::fromHex("3d05")).append(ieeeAddress()).append(sensor).append(QByteArray::fromHex("080007fd160a020ac9e8b1b8d4dacfdfc0eb0000000000013d0465"));
+                list.append(writeAttributeRequest(m_transactionId++, m_manufacturerCode, 0xFFF2, DATA_TYPE_OCTET_STRING, header(static_cast <quint8> (value.length()), 0x13, 0x02).append(value)));
+            }
+            else
+            {
+                value = QByteArray(reinterpret_cast <char*> (&timestamp), sizeof(timestamp)).append(QByteArray::fromHex("3d05")).append(ieeeAddress()).append(12, 0x00);
+                list.append(writeAttributeRequest(m_transactionId++, m_manufacturerCode, 0xFFF2, DATA_TYPE_OCTET_STRING, header(static_cast <quint8> (value.length()), 0x12, 0x02).append(value)));
+
+                value = QByteArray(reinterpret_cast <char*> (&timestamp), sizeof(timestamp)).append(QByteArray::fromHex("3d04")).append(ieeeAddress()).append(12, 0x00);
+                list.append(writeAttributeRequest(m_transactionId++, m_manufacturerCode, 0xFFF2, DATA_TYPE_OCTET_STRING, header(static_cast <quint8> (value.length()), 0x13, 0x02).append(value)));
+            }
+
+            m_attributes = {0x027E};
+            return list;
+        }
+
+        case 1: // externalTemperature
+        {
+            const Property &property = endpointProperty("lumiData");
+            QMap <QString, QVariant> map = property->value().toMap();
+            quint32 temperature = qToBigEndian <quint32> (data.toDouble() * 100);
+
+            map.insert("externalTemperature", data.toBool());
+            property->setValue(map);
+            m_properyUpdated = true;
+            m_attributes.clear();
+
+            value = QByteArray(sensor).append(QByteArray::fromHex("00010055")).append(reinterpret_cast <char*> (&temperature), sizeof(temperature));
+            return writeAttributeRequest(m_transactionId++, m_manufacturerCode, 0xFFF2, DATA_TYPE_OCTET_STRING, header(static_cast <quint8> (value.length()), 0x12, 0x05).append(value));
+        }
+    }
+
+    return QByteArray();
+}
+
+QByteArray ActionsLUMI::RadiatorThermostat::header(quint8 length, quint8 counter, quint8 action)
+{
+    quint8 data[5] = {0xAA, 0x71, static_cast <quint8> (length + 3), 0x44, counter}, checksum = 0;
+    QByteArray header(reinterpret_cast <char*> (data), sizeof(data));
+
+    for (size_t i = 0; i < sizeof(data); i++)
+        checksum -= data[i];
+
+    return header.append(static_cast <char> (512 - checksum)).append(static_cast <char> (action)).append(0x41).append(static_cast <char> (length));
+}
+
+QVariant ActionsLUMI::ElectricThermostat::request(const QString &name, const QVariant &data)
 {
     quint64 value;
 
@@ -49,7 +111,7 @@ QByteArray ActionsLUMI::Thermostat::request(const QString &name, const QVariant 
                 break;
             }
 
-            switch (enumIndex(name, data.toString()))
+            switch (enumIndex(name, data))
             {
                 case 0:  value = 0xF0; break;
                 case 1:  value = 0x0F; break;
@@ -63,7 +125,7 @@ QByteArray ActionsLUMI::Thermostat::request(const QString &name, const QVariant 
 
 
         case 2: // fanMode
-            value = static_cast <quint64> (0x0F - enumIndex(name, data.toString())) << 20;
+            value = static_cast <quint64> (0x0F - enumIndex(name, data)) << 20;
             break;
 
         default:
@@ -75,7 +137,7 @@ QByteArray ActionsLUMI::Thermostat::request(const QString &name, const QVariant 
     return writeAttribute(DATA_TYPE_64BIT_UNSIGNED, &value, sizeof(value));
 }
 
-QByteArray ActionsLUMI::ButtonMode::request(const QString &name, const QVariant &data)
+QVariant ActionsLUMI::ButtonMode::request(const QString &name, const QVariant &data)
 {
     QList <QString> list = {"relay", "leftRelay", "rightRelay", "decoupled"};
     qint8 value;
@@ -98,19 +160,37 @@ QByteArray ActionsLUMI::ButtonMode::request(const QString &name, const QVariant 
     return writeAttribute(DATA_TYPE_8BIT_UNSIGNED, &value, sizeof(value));
 }
 
-QByteArray ActionsLUMI::SwitchStatusMemory::request(const QString &, const QVariant &data)
+QVariant ActionsLUMI::SwitchStatusMemory::request(const QString &, const QVariant &data)
 {
     quint8 value = data.toBool() ? 0x01 : 0x00;
     return writeAttribute(DATA_TYPE_BOOLEAN, &value, sizeof(value));
 }
 
-QByteArray ActionsLUMI::LightStatusMemory::request(const QString &, const QVariant &data)
+QVariant ActionsLUMI::LightStatusMemory::request(const QString &, const QVariant &data)
 {
     quint8 value = data.toBool() ? 0x01 : 0x00;
     return writeAttribute(DATA_TYPE_BOOLEAN, &value, sizeof(value));
 }
 
-QByteArray ActionsLUMI::CoverPosition::request(const QString &, const QVariant &data)
+QVariant ActionsLUMI::BasicStatusMemory::request(const QString &, const QVariant &data)
+{
+    QList <QVariant> list;
+
+    if (data.toBool())
+    {
+        list.append(writeAttribute(DATA_TYPE_OCTET_STRING, QByteArray::fromHex("aa8005d14707011001")));
+        list.append(writeAttribute(DATA_TYPE_OCTET_STRING, QByteArray::fromHex("aa8003d3070801")));
+    }
+    else
+    {
+        list.append(writeAttribute(DATA_TYPE_OCTET_STRING, QByteArray::fromHex("aa8005d14709011000")));
+        list.append(writeAttribute(DATA_TYPE_OCTET_STRING, QByteArray::fromHex("aa8003d3070a01")));
+    }
+
+    return list;
+}
+
+QVariant ActionsLUMI::CoverPosition::request(const QString &, const QVariant &data)
 {
     float value = data.toFloat();
 
@@ -124,7 +204,7 @@ QByteArray ActionsLUMI::CoverPosition::request(const QString &, const QVariant &
     return writeAttribute(DATA_TYPE_SINGLE_PRECISION, &value, sizeof(value));
 }
 
-QByteArray ActionsLUMI::VibrationSensitivity::request(const QString &, const QVariant &data)
+QVariant ActionsLUMI::VibrationSensitivity::request(const QString &, const QVariant &data)
 {
     qint8 value = listIndex({"high", "medium", "low"}, data);
 

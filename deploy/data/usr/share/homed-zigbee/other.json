@@ -2,6 +2,36 @@
   "Bacchus":
   [
     {
+      "description":    "Bacchus Mercury Electricity Meter Controller",
+      "modelNames":     ["Mercury_Counter"],
+      "properties":     ["temperature", "voltage", "current", "power"],
+      "bindings":       ["temperature", "power"],
+      "reportings":     ["temperature", "voltage", "current", "power"],
+      "exposes":        ["temperature", "voltage", "current", "power"],
+      "options":        {"reporting": {"minInterval": 0, "maxInterval": 30}, "voltageDivider": 10, "currentDivider": 100},
+      "endpointId":     1
+    },
+    {
+      "modelNames":     ["Mercury_Counter"],
+      "properties":     ["energy", "customAttributes"],
+      "actions":        ["customAttributes"],
+      "bindings":       ["energy"],
+      "reportings":     ["energyT1", "energyT2", "energyT3", "energyT4"],
+      "exposes":        ["energyT1", "energyT2", "energyT3", "energyT4", "deviceAddress", "readInterval"],
+      "options":        {
+                          "customAttributes":
+                          {
+                            "deviceAddress":  {"type": "value", "clusterId": 1794, "attributeId": 61441, "dataType": 35, "action": true},
+                            "readInterval":   {"type": "value", "clusterId": 1794, "attributeId": 61442, "dataType": 33, "action": true}
+                          },
+                          "reporting": {"minInterval": 0, "maxInterval": 30},
+                          "deviceAddress": {"type": "number", "min": 0, "max": 100000000},
+                          "readInterval": {"min": 10, "max": 600},
+                          "energyDivider": 100
+                        },
+      "endpointId":     2
+    },
+    {
       "description":    "MODKAM Soil Moisture Sensor with Bacchus Firmware",
       "modelNames":     ["Flower_sensor_v2a"],
       "properties":     ["batteryPercentage", "illuminance", "temperature", "humidity"],
@@ -111,7 +141,7 @@
       "modelNames":     ["L101Z-SBN"],
       "exposes":        ["thermostat", "childLock", "sensorType", "temperatureOffset", "hysteresis"],
       "options":        {
-                          "customAttributes_3": {"sensorType": {"type": "enum", "clusterId": 513, "manufacturerCode": 30583, "attributeId": 30464, "dataType": 48, "action": true}},
+                          "customAttributes": {"sensorType": {"type": "enum", "clusterId": 513, "manufacturerCode": 30583, "attributeId": 30464, "dataType": 48, "action": true}},
                           "systemMode": {"enum": ["off", "heat"]},
                           "targetTemperature": {"min": 15, "max": 35, "step": 0.5},
                           "temperatureOffset": {"min": -3, "max": 3, "step": 0.1},
@@ -139,7 +169,7 @@
       "modelNames":     ["L101Ze-SBN"],
       "exposes":        ["thermostat", "childLock", "sensorType", "temperatureOffset", "hysteresis"],
       "options":        {
-                          "customAttributes_3": {"sensorType": {"type": "enum", "clusterId": 513, "manufacturerCode": 30583, "attributeId": 65280, "dataType": 48, "action": true}},
+                          "customAttributes": {"sensorType": {"type": "enum", "clusterId": 513, "manufacturerCode": 30583, "attributeId": 65280, "dataType": 48, "action": true}},
                           "systemMode": {"enum": ["off", "heat"]},
                           "targetTemperature": {"min": 15, "max": 35, "step": 0.5},
                           "temperatureOffset": {"min": -2.5, "max": 2.5, "step": 0.1},

@@ -1,7 +1,7 @@
 #ifndef CONTROLLER_H
 #define CONTROLLER_H
 
-#define SERVICE_VERSION                 "3.8.9"
+#define SERVICE_VERSION                 "3.9.2"
 #define UPDATE_DEVICE_DATA_INTERVAL     5000
 #define UPDATE_PROPERTIES_DELAY         1000
 
@@ -13,8 +13,6 @@ class Controller : public HOMEd
     Q_OBJECT
 
 public:
-
-    Controller(const QString &configFile);
 
     enum class Command
     {
@@ -38,6 +36,8 @@ public:
         touchLinkScan,
         touchLinkReset
     };
+
+    Controller(const QString &configFile);
 
     Q_ENUM(Command)
 

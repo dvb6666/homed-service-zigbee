@@ -23,7 +23,7 @@ public:
         AbstractMetaObject(name), m_clusterId(clusterId), m_manufacturerCode(manufacturerCode), m_transactionId(0), m_properyUpdated(false), m_actions(actions) {}
 
     virtual ~ActionObject(void) {}
-    virtual QByteArray request(const QString &name, const QVariant &data) = 0;
+    virtual QVariant request(const QString &name, const QVariant &data) = 0;
 
     inline quint16 clusterId(void) { return m_clusterId; }
     inline quint16 manufacturerCode(void) { return m_manufacturerCode; }
@@ -43,8 +43,12 @@ protected:
     QList <quint16> m_attributes;
     QList <QString> m_actions;
 
+    QByteArray ieeeAddress(void);
     Property endpointProperty(const QString &name = QString());
+
     QByteArray writeAttribute(quint8 dataType, void *value, size_t length);
+    QByteArray writeAttribute(quint8 dataType, const QByteArray &data);
+
     qint8 listIndex(const QList <QString> &list, const QVariant &value);
     int enumIndex(const QString name, const QVariant &value);
 };
@@ -57,7 +61,7 @@ public:
     EnumAction(const QString &name, quint16 clusterId, quint16 manufacturerCode, quint16 attributeId, quint8 dataType) :
         ActionObject(name, clusterId, manufacturerCode, attributeId), m_dataType(dataType) {}
 
-    QByteArray request(const QString &name, const QVariant &data) override;
+    QVariant request(const QString &name, const QVariant &data) override;
 
 private:
 

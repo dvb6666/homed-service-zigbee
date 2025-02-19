@@ -92,7 +92,7 @@ namespace Reportings
 
     public:
 
-        Level(void) :  ReportingObject("level", CLUSTER_LEVEL_CONTROL, 0x0000, DATA_TYPE_8BIT_UNSIGNED, 0, 600) {}
+        Level(void) : ReportingObject("level", CLUSTER_LEVEL_CONTROL, 0x0000, DATA_TYPE_8BIT_UNSIGNED, 0, 600) {}
 
     };
 
@@ -101,7 +101,7 @@ namespace Reportings
 
     public:
 
-        AnalogInput(void) :  ReportingObject("analogInput", CLUSTER_ANALOG_INPUT, 0x0055, DATA_TYPE_SINGLE_PRECISION, 0, 600) {}
+        AnalogInput(void) : ReportingObject("analogInput", CLUSTER_ANALOG_INPUT, 0x0055, DATA_TYPE_SINGLE_PRECISION, 0, 600) {}
 
     };
 
@@ -110,7 +110,7 @@ namespace Reportings
 
     public:
 
-        AnalogOutput(void) :  ReportingObject("analogOutput", CLUSTER_ANALOG_OUTPUT, 0x0055, DATA_TYPE_SINGLE_PRECISION, 0, 600) {}
+        AnalogOutput(void) : ReportingObject("analogOutput", CLUSTER_ANALOG_OUTPUT, 0x0055, DATA_TYPE_SINGLE_PRECISION, 0, 600) {}
 
     };
 
@@ -182,7 +182,7 @@ namespace Reportings
 
     public:
 
-        Pressure(void) : ReportingObject("pressure", CLUSTER_PRESSURE_MEASUREMENT, 0x0000, DATA_TYPE_16BIT_SIGNED, 10, 3600,  10) {}
+        Pressure(void) : ReportingObject("pressure", CLUSTER_PRESSURE_MEASUREMENT, 0x0000, DATA_TYPE_16BIT_SIGNED, 10, 3600, 10) {}
 
     };
 
@@ -237,6 +237,42 @@ namespace Reportings
     public:
 
         Energy(void) : ReportingObject("energy", CLUSTER_SMART_ENERGY_METERING, 0x0000, DATA_TYPE_48BIT_UNSIGNED, 10, 600, 1) {}
+
+    };
+
+    class EnergyT1 : public ReportingObject
+    {
+
+    public:
+
+        EnergyT1(void) : ReportingObject("energyT1", CLUSTER_SMART_ENERGY_METERING, 0x0100, DATA_TYPE_48BIT_UNSIGNED, 10, 600, 1) {}
+
+    };
+
+    class EnergyT2 : public ReportingObject
+    {
+
+    public:
+
+        EnergyT2(void) : ReportingObject("energyT2", CLUSTER_SMART_ENERGY_METERING, 0x0102, DATA_TYPE_48BIT_UNSIGNED, 10, 600, 1) {}
+
+    };
+
+    class EnergyT3 : public ReportingObject
+    {
+
+    public:
+
+        EnergyT3(void) : ReportingObject("energyT3", CLUSTER_SMART_ENERGY_METERING, 0x0104, DATA_TYPE_48BIT_UNSIGNED, 10, 600, 1) {}
+
+    };
+
+    class EnergyT4 : public ReportingObject
+    {
+
+    public:
+
+        EnergyT4(void) : ReportingObject("energyT4", CLUSTER_SMART_ENERGY_METERING, 0x0106, DATA_TYPE_48BIT_UNSIGNED, 10, 600, 1) {}
 
     };
 

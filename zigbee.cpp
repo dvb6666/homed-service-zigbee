@@ -109,12 +109,12 @@ void ZigBee::updateDevice(const QString &deviceName, const QString &name, const 
         if (!other.isNull() && other->removed())
             m_devices->remove(other->ieeeAddress());
 
-        device->setName(name.isEmpty() ? device->ieeeAddress().toHex(':') : name.trimmed());
+        device->setName(name.isEmpty() ? device->ieeeAddress().toHex(':') : mqttSafe(name.trimmed()));
     }
 
     if (device->active() != active)
     {
-        device->setAvailability(active ? Availability::Unknown : Availability::Inactive);
+        device->setAvailability(active ? Availability::Unknown : Availability::Offline);
         device->setActive(active);
     }
 
@@ -123,7 +123,7 @@ void ZigBee::updateDevice(const QString &deviceName, const QString &name, const 
     device->setCloud(cloud);
 
     emit deviceEvent(device.data(), Event::deviceUpdated);
-    m_devices->storeDatabase();
+    m_devices->storeDatabase(true);
 }
 
 void ZigBee::removeDevice(const QString &deviceName, bool force)
@@ -143,7 +143,7 @@ void ZigBee::removeDevice(const QString &deviceName, bool force)
     emit deviceEvent(device.data(), Event::deviceRemoved);
 
     m_devices->removeDevice(device);
-    m_devices->storeDatabase();
+    m_devices->storeDatabase(true);
 }
 
 void ZigBee::setupDevice(const QString &deviceName, bool reportings)
@@ -352,24 +352,30 @@ void ZigBee::deviceAction(const QString &deviceName, quint8 endpointId, const QS
 
     for (auto it = device->endpoints().begin(); it != device->endpoints().end(); it++)
     {
+        bool check = false;
+
         if (endpointId && it.key() != endpointId)
             continue;
 
-        for (int i = 0; i < it.value()->actions().count(); i++)
+        for (int i = 0; i < it.value()->actions().count() && !check; i++)
         {
             const Action &action = it.value()->actions().at(i);
 
             if (action->name() == name || action->name() == "tuyaDataPoints" || action->actions().contains(name))
             {
-                QByteArray request = action->request(name, data);
+                QVariant request = action->request(name, data);
+                QList <QVariant> list = request.type() == QVariant::List ? request.toList() : QList <QVariant> {request};
 
-                if (request.isEmpty())
-                    continue;
+                for (int i = 0; i < list.count(); i++)
+                {
+                    QByteArray payload = list.at(i).toByteArray();
 
-                if (data.type() != QVariant::String || !data.toString().isEmpty())
-                    enqueueRequest(device, it.key(), action->clusterId(), request, QString("%1 action request").arg(name), false, action->manufacturerCode(), action);
+                    if (payload.isEmpty() || (data.type() == QVariant::String && data.toString().isEmpty()))
+                        continue;
 
-                break;
+                    enqueueRequest(device, it.key(), action->clusterId(), payload, list.count() > 1 ? QString("%1 action request %2 of %3").arg(name).arg(i + 1).arg(list.count()) : QString("%1 action request").arg(name), false, action->manufacturerCode(), action);
+                    check = true;
+                }
             }
         }
     }
@@ -382,18 +388,24 @@ void ZigBee::groupAction(quint16 groupId, const QString &name, const QVariant &d
     if (type)
     {
         Action action(reinterpret_cast <ActionObject*> (QMetaType::create(type)));
-        QByteArray request = action->request(name, data);
+        QVariant request = action->request(name, data);
+        QList <QVariant> list = request.type() == QVariant::List ? request.toList() : QList <QVariant> {request};
 
-        if (request.isEmpty() || (data.type() == QVariant::String && data.toString().isEmpty()))
-            return;
-
-        if (!m_adapter->multicastRequest(m_requestId, groupId, 0x01, 0xFF, action->clusterId(), request))
+        for (int i = 0; i < list.count(); i++)
         {
-            logWarning << "Group" << groupId << action->name().toUtf8().constData() << "action request aborted";
-            return;
-        }
+            QByteArray payload = list.at(i).toByteArray();
 
-        logInfo << "Group" << groupId << action->name().toUtf8().constData() << "action request sent";
+            if (payload.isEmpty() || (data.type() == QVariant::String && data.toString().isEmpty()))
+                continue;
+
+            if (!m_adapter->multicastRequest(m_requestId, groupId, 0x01, 0xFF, action->clusterId(), payload))
+            {
+                logWarning << "Group" << groupId << action->name().toUtf8().constData() << (list.count() > 1 ? QString("action request %1 of %2 aborted").arg(i + 1).arg(list.count()).toUtf8().constData() : "action request aborted");
+                continue;
+            }
+
+            logInfo << "Group" << groupId << action->name().toUtf8().constData() << (list.count() > 1 ? QString("action request %1 of %2 sent").arg(i + 1).arg(list.count()).toUtf8().constData() : "action request sent");
+        }
     }
 }
 
@@ -516,7 +528,7 @@ bool ZigBee::interviewRequest(quint8 id, const Device &device)
 
             for (auto it = device->endpoints().begin(); it != device->endpoints().end(); it++)
             {
-                if (device->batteryPowered() || !it.value()->inClusters().contains(CLUSTER_COLOR_CONTROL) || it.value()->colorCapabilities() != 0xFFFF)
+                if (device->batteryPowered() || !it.value()->inClusters().contains(CLUSTER_COLOR_CONTROL) || it.value()->meta().value("colorCapabilities").isValid())
                     continue;
 
                 if (!m_adapter->unicastRequest(id, device->networkAddress(), 0x01, it.key(), CLUSTER_COLOR_CONTROL, readAttributesRequest(id, 0x0000, {0x400A})))
@@ -680,7 +692,7 @@ void ZigBee::interviewFinished(const Device &device)
     }
 
     device->setInterviewStatus(InterviewStatus::Finished);
-    m_devices->storeDatabase();
+    m_devices->storeDatabase(true);
 }
 
 void ZigBee::interviewError(const Device &device, const QString &reason)
@@ -846,7 +858,7 @@ bool ZigBee::bindRequest(const Endpoint &endpoint, quint16 clusterId, const QByt
             if (unbind)
             {
                 endpoint->bindings().removeAt(i);
-                m_devices->storeDatabase();
+                m_devices->storeDatabase(true);
             }
 
             check = false;
@@ -856,7 +868,7 @@ bool ZigBee::bindRequest(const Endpoint &endpoint, quint16 clusterId, const QByt
         if (check)
         {
             endpoint->bindings().append(binding);
-            m_devices->storeDatabase();
+            m_devices->storeDatabase(true);
         }
     }
 
@@ -904,7 +916,7 @@ bool ZigBee::groupRequest(const Endpoint &endpoint, quint16 groupId, bool remove
     {
         logInfo << device << endpoint << name.toUtf8().constData() << "finished successfully";
         endpoint->groups().clear();
-        m_devices->storeDatabase();
+        m_devices->storeDatabase(true);
     }
     else
     {
@@ -921,7 +933,7 @@ bool ZigBee::groupRequest(const Endpoint &endpoint, quint16 groupId, bool remove
             if (remove)
             {
                 endpoint->groups().removeAt(i);
-                m_devices->storeDatabase();
+                m_devices->storeDatabase(true);
             }
 
             check = false;
@@ -931,7 +943,7 @@ bool ZigBee::groupRequest(const Endpoint &endpoint, quint16 groupId, bool remove
         if (check)
         {
             endpoint->groups().append(groupId);
-            m_devices->storeDatabase();
+            m_devices->storeDatabase(true);
         }
     }
 
@@ -1083,22 +1095,28 @@ void ZigBee::parseAttribute(const Endpoint &endpoint, quint16 clusterId, quint8 
 
         case CLUSTER_COLOR_CONTROL:
 
+            if (device->interviewStatus() == InterviewStatus::Finished)
+                break;
+
             if (attributeId == 0x400A && dataType == DATA_TYPE_16BIT_BITMAP)
             {
                 quint16 value;
 
                 memcpy(&value, data.constData(), sizeof(value));
-                endpoint->setColorCapabilities(qFromLittleEndian(value));
+                value = qFromLittleEndian(value);
 
-                logInfo << device << endpoint << "color capabilities:" << QString::asprintf("0x%04x", endpoint->colorCapabilities());
-                interviewDevice(device);
+                logInfo << device << endpoint << "color capabilities:" << QString::asprintf("0x%04x", value);
+                endpoint->meta().insert("colorCapabilities", value);
             }
+            else
+                endpoint->meta().insert("colorCapabilities", 0x0000);
 
+            interviewDevice(device);
             break;
 
         case CLUSTER_IAS_ZONE:
 
-            if (attributeId == 0x0010 && dataType == DATA_TYPE_NO_DATA) // TODO: figure it out
+            if (attributeId == 0x0010 && dataType == DATA_TYPE_NO_DATA)
             {
                 endpoint->setZoneStatus(ZoneStatus::Enrolled);
                 interviewDevice(device);
@@ -1119,9 +1137,12 @@ void ZigBee::parseAttribute(const Endpoint &endpoint, quint16 clusterId, quint8 
                     if (dataType == DATA_TYPE_16BIT_ENUM)
                     {
                         quint16 value;
+
                         memcpy(&value, data.constData(), sizeof(value));
-                        endpoint->setZoneType(qFromLittleEndian(value));
-                        logInfo << device << endpoint << "IAS zone type:" << QString::asprintf("0x%04x", endpoint->zoneType());
+                        value = qFromLittleEndian(value);
+
+                        logInfo << device << endpoint << "IAS zone type:" << QString::asprintf("0x%04x", value);
+                        endpoint->meta().insert("zoneType", value);
                     }
 
                     break;
@@ -1214,7 +1235,7 @@ void ZigBee::clusterCommandReceived(const Endpoint &endpoint, quint16 clusterId,
                     if (device->ota().fileName().isEmpty())
                         device->ota().refresh(m_devices->otaDir());
 
-                    m_devices->storeDatabase();
+                    m_devices->storeDatabase(true);
 
                     if (device->ota().fileName().isEmpty())
                     {
@@ -1278,7 +1299,7 @@ void ZigBee::clusterCommandReceived(const Endpoint &endpoint, quint16 clusterId,
                     if (!device->ota().running())
                     {
                         device->ota().setRunning(true);
-                        m_devices->storeDatabase();
+                        m_devices->storeDatabase(true);
                     }
 
                     device->ota().setProgress(static_cast <double> (qFromLittleEndian(request->fileOffset) + buffer.length()) / device->ota().imageSize() * 100);
@@ -1413,26 +1434,26 @@ void ZigBee::globalCommandReceived(const Endpoint &endpoint, quint16 clusterId, 
                     QDateTime now = QDateTime::currentDateTime();
                     quint32 value;
 
-                    response.append(1, static_cast <char> (STATUS_SUCCESS));
+                    response.append(static_cast <char> (STATUS_SUCCESS));
 
                     switch (attributeId)
                     {
                         case 0x0000:
                             logDebug(m_debug) << device << "requested UTC time";
                             value = qToLittleEndian <quint32> (now.toTime_t() + (device->options().value("utcTime").toBool() ? now.offsetFromUtc() : 0) - TIME_OFFSET);
-                            response.append(1, static_cast <char> (DATA_TYPE_UTC_TIME)).append(reinterpret_cast <char*> (&value), sizeof(value));
+                            response.append(static_cast <char> (DATA_TYPE_UTC_TIME)).append(reinterpret_cast <char*> (&value), sizeof(value));
                             break;
 
                         case 0x0002:
                             logDebug(m_debug)<< device << "requested time zone";
                             value = qToLittleEndian <quint32> (now.offsetFromUtc());
-                            response.append(1, static_cast <char> (DATA_TYPE_32BIT_SIGNED)).append(reinterpret_cast <char*> (&value), sizeof(value));
+                            response.append(static_cast <char> (DATA_TYPE_32BIT_SIGNED)).append(reinterpret_cast <char*> (&value), sizeof(value));
                             break;
 
                         case 0x0007:
                             logDebug(m_debug)<< device << "requested local time";
                             value = qToLittleEndian <quint32> (now.toTime_t() + now.offsetFromUtc() - TIME_OFFSET);
-                            response.append(1, static_cast <char> (DATA_TYPE_32BIT_UNSIGNED)).append(reinterpret_cast <char*> (&value), sizeof(value));
+                            response.append(static_cast <char> (DATA_TYPE_32BIT_UNSIGNED)).append(reinterpret_cast <char*> (&value), sizeof(value));
                             break;
                     }
 
@@ -1440,7 +1461,7 @@ void ZigBee::globalCommandReceived(const Endpoint &endpoint, quint16 clusterId, 
                 }
 
                 logWarning << device << "requested unrecognized attribute" << QString::asprintf("0x%04x", attributeId) << "from cluster" << QString::asprintf("0x%04x", clusterId);
-                response.append(1, static_cast <char> (STATUS_UNSUPPORTED_ATTRIBUTE));
+                response.append(static_cast <char> (STATUS_UNSUPPORTED_ATTRIBUTE));
             }
 
             enqueueRequest(device, endpoint->id(), clusterId, response);
@@ -1633,7 +1654,7 @@ void ZigBee::storeNeighbors(void)
             return;
 
     logInfo << "Neighbors data collected";
-    m_devices->storeDatabase();
+    m_devices->storeDatabase(true);
 }
 
 void ZigBee::otaError(const Endpoint &endpoint, quint16 manufacturerCode, quint8 transactionId, quint8 commandId, const QString &error, bool response)
@@ -1655,7 +1676,7 @@ void ZigBee::otaError(const Endpoint &endpoint, quint16 manufacturerCode, quint8
     if (!check)
         return;
 
-    m_devices->storeDatabase();
+    m_devices->storeDatabase(true);
 }
 
 void ZigBee::blink(quint16 timeout)
@@ -1682,19 +1703,16 @@ void ZigBee::coordinatorReady(void)
         m_devices->insert(device->ieeeAddress(), device);
     }
 
-    for (auto it = m_devices->begin(); it != m_devices->end(); it++)
+    for (auto it = m_devices->begin(); it != m_devices->end(); NULL)
     {
-        if (it.value()->removed()) // fix for old-style removed devices
-            continue;
-
         if (it.value()->logicalType() == LogicalType::Coordinator && it.key() != device->ieeeAddress())
         {
             logWarning << "Coordinator" << it.value()->ieeeAddress().toHex(':') << "removed";
-            m_devices->erase(it++);
+            it = m_devices->erase(it);
+            continue;
         }
 
-        if (it == m_devices->end())
-            break;
+        it++;
     }
 
     device->setRemoved(false);
@@ -1749,7 +1767,7 @@ void ZigBee::permitJoinUpdated(bool enabled)
     }
 
     m_devices->setPermitJoin(enabled);
-    m_devices->storeDatabase();
+    m_devices->storeDatabase(true);
 }
 
 void ZigBee::deviceJoined(const QByteArray &ieeeAddress, quint16 networkAddress)
@@ -1810,7 +1828,7 @@ void ZigBee::deviceLeft(const QByteArray &ieeeAddress)
     emit deviceEvent(it.value().data(), Event::deviceLeft);
 
     m_devices->removeDevice(it.value());
-    m_devices->storeDatabase();
+    m_devices->storeDatabase(true);
 }
 
 void ZigBee::zdoMessageReveived(quint16 networkAddress, quint16 clusterId, const QByteArray &payload)
@@ -1957,6 +1975,9 @@ void ZigBee::zdoMessageReveived(quint16 networkAddress, quint16 clusterId, const
         }
     }
 
+    if (payload.at(0))
+        return;
+
     device->updateLastSeen();
 }
 
@@ -2097,15 +2118,17 @@ void ZigBee::requestFinished(quint8 id, quint8 status)
             emit deviceEvent(device.data(), Event::deviceRemoved);
 
             m_devices->removeDevice(device);
-            m_devices->storeDatabase();
+            m_devices->storeDatabase(true);
             break;
         }
 
         case RequestType::LQI:
         {
-            if (status)
+            const Device &device = qvariant_cast <Device> (it.value()->data());
+
+            if (status && device->lqiRequestPending())
             {
-                qvariant_cast <Device> (it.value()->data())->setLqiRequestPending(false);
+                device->setLqiRequestPending(false);
                 storeNeighbors();
             }
 
@@ -2190,13 +2213,15 @@ void ZigBee::handleRequests(void)
         it.value()->setStatus(RequestStatus::Sent);
     }
 
-    for (auto it = m_requests.begin(); it != m_requests.end(); it++)
+    for (auto it = m_requests.begin(); it != m_requests.end(); NULL)
     {
-        if (it.value()->status() == RequestStatus::Finished || it.value()->status() == RequestStatus::Aborted)
-            m_requests.erase(it++);
+        if (it.value()->status() == RequestStatus::Finished || it.value()->status() == RequestStatus::Aborted || QDateTime::currentMSecsSinceEpoch() - it.value()->timestamp() > NETWORK_REQUEST_TIMEOUT)
+        {
+            it = m_requests.erase(it);
+            continue;
+        }
 
-        if (it == m_requests.end())
-            break;
+        it++;
     }
 
     m_requestTimer->stop();

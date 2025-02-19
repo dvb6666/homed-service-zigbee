@@ -150,7 +150,7 @@ void PropertiesLUMI::Data::parseData(quint16 dataPoint, const QByteArray &data, 
             if (static_cast <size_t> (data.length()) > sizeof(value))
                 break;
 
-            memcpy(&value, data.constData(),  data.length());
+            memcpy(&value, data.constData(), data.length());
             map.insert("voltage", round(qFromLittleEndian(value)) / 10);
             break;
         }
@@ -162,7 +162,7 @@ void PropertiesLUMI::Data::parseData(quint16 dataPoint, const QByteArray &data, 
             if (static_cast <size_t> (data.length()) > sizeof(value))
                 break;
 
-            memcpy(&value, data.constData(),  data.length());
+            memcpy(&value, data.constData(), data.length());
             map.insert("current", modelName() == "lumi.relay.c2acn01" ? qFromLittleEndian(value) : round(qFromLittleEndian(value)) / 1000);
             break;
         }
@@ -313,6 +313,12 @@ void PropertiesLUMI::Data::parseData(quint16 dataPoint, const QByteArray &data, 
             break;
         }
 
+        case 0x027E:
+        {
+            map.insert("sensorType", data.at(0) ? "external" : "internal");
+            break;
+        }
+
         case 0xFF02:
         {
             quint16 value = 0;
@@ -336,7 +342,23 @@ void PropertiesLUMI::Data::parseData(quint16 dataPoint, const QByteArray &data, 
                 case 0x0B: map.insert("sensitivityMode", "medium"); break;
                 case 0x15: map.insert("sensitivityMode", "low"); break;
             }
+
+            break;
         }
+
+        case 0xFFF0:
+        {
+            QList <QByteArray> list = {QByteArray::fromHex("aa8003d3070801"), QByteArray::fromHex("aa8003d3070a01")};
+
+            switch (list.indexOf(data))
+            {
+                case 0: map.insert("statusMemory", true); break;
+                case 1: map.insert("statusMemory", false); break;
+            }
+
+            break;
+        }
+
     }
 }
 

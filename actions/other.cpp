@@ -2,7 +2,34 @@
 #include "other.h"
 #include "zcl.h"
 
-QByteArray ActionsCustom::Attribute::request(const QString &, const QVariant &data)
+QVariant ActionsYandex::Settings::request(const QString &name, const QVariant &data)
+{
+    int index = m_actions.indexOf(name);
+
+    switch (index)
+    {
+        case 0: // switchMode
+        case 1: // switchType
+        case 2: // powerMode
+        {
+            qint8 value = static_cast <qint8> (enumIndex(name, data));
+            m_attributes = {static_cast <quint16> (index + 1)};
+            return value < 0 ? QByteArray() : zclHeader(FC_CLUSTER_SPECIFIC, m_transactionId++, static_cast <quint8> (m_attributes.at(0)), m_manufacturerCode).append(value);
+        }
+
+        case 3: // indicator
+        case 4: // interlock
+        {
+            quint8 value = data.toBool() ? 0x00 : 0x01;
+            m_attributes = {static_cast <quint16> (index == 3 ? 0x0005 : 00007)};
+            return writeAttribute(DATA_TYPE_BOOLEAN, &value, sizeof(value));
+        }
+    }
+
+    return QByteArray();
+}
+
+QVariant ActionsCustom::Attribute::request(const QString &, const QVariant &data)
 {
     QList <QString> types = {"bool", "value", "enum"}; // TODO: refactor this
     QVariant value;
@@ -14,7 +41,7 @@ QByteArray ActionsCustom::Attribute::request(const QString &, const QVariant &da
 
         case 2: // enum
         {
-            int index = enumIndex(m_name, data.toString());
+            int index = enumIndex(m_name, data);
 
             if (index < 0)
                 return QByteArray();
