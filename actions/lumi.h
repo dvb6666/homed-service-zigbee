@@ -40,6 +40,20 @@ namespace ActionsLUMI
 
     };
 
+    class ThermostatProgram : public ActionObject
+    {
+
+    public:
+
+        ThermostatProgram(void) : ActionObject("thermostatProgram", CLUSTER_LUMI, MANUFACTURER_CODE_LUMI, {"scheduleMonday", "scheduleTuesday", "scheduleWednesday", "scheduleThursday", "scheduleFriday", "scheduleSaturday", "scheduleSunday"}) {}
+        QVariant request(const QString &name, const QVariant &data) override;
+
+    private:
+
+        QMap <QString, QVariant> m_data;
+
+    };
+
     class ButtonMode : public ActionObject
     {
 

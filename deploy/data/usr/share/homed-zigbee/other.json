@@ -13,8 +13,7 @@
     },
     {
       "modelNames":     ["Mercury_Counter"],
-      "properties":     ["energy", "customAttributes"],
-      "actions":        ["customAttributes"],
+      "properties":     ["energy"],
       "bindings":       ["energy"],
       "reportings":     ["energyT1", "energyT2", "energyT3", "energyT4"],
       "exposes":        ["energyT1", "energyT2", "energyT3", "energyT4", "deviceAddress", "readInterval"],
@@ -30,6 +29,39 @@
                           "energyDivider": 100
                         },
       "endpointId":     2
+    },
+    {
+      "description":    "Bacchus Human Presence Sensor",
+      "modelNames":     ["Presence_Sensor_v2.6"],
+      "properties":     ["status", "occupancy", "illuminance"],
+      "actions":        ["status"],
+      "bindings":       ["occupancy", "illuminance", "time"],
+      "reportings":     ["occupancy", "illuminance"],
+      "exposes":        ["switch", "occupancy", "illuminance", "targetDistance", "motionStatus", "readInterval", "startTime", "endTime", "illuminanceHigh"],
+      "options":        {
+                          "customAttributes":
+                          {
+                            "startTime":        {"type": "time",  "clusterId": 10,   "attributeId": 3,     "dataType": 35, "action": true},
+                            "endTime":          {"type": "time",  "clusterId": 10,   "attributeId": 4,     "dataType": 35, "action": true},
+                            "illuminanceHigh":  {"type": "value", "clusterId": 1024, "attributeId": 61441, "dataType": 33, "action": true},
+                            "targetDistance":   {"type": "value", "clusterId": 1030, "attributeId": 61445, "dataType": 33, "divider": 100},
+                            "motionStatus":     {"type": "enum",  "clusterId": 1030, "attributeId": 61446, "dataType": 48},
+                            "readInterval":     {"type": "value", "clusterId": 1030, "attributeId": 61447, "dataType": 33, "action": true}
+                          },
+                          "reporting": {"minInterval": 0, "maxInterval": 600, "valueChange": 0},
+                          "startTime": {"type": "time"},
+                          "endTime": {"type": "time"},
+                          "illuminanceHigh": {"type": "number", "min": 0, "max": 50000, "unit": "lx"},
+                          "motionStatus": {"enum": ["none", "moving", "standing", "mixed"]},
+                          "readInterval": {"min": 0, "max": 30}
+                        },
+      "endpointId":     1
+    },
+    {
+      "modelNames":     ["Presence_Sensor_v2.6"],
+      "exposes":        ["indicatorMode"],
+      "options":        {"customAttributes": {"indicatorMode": {"type": "enum", "clusterId": 6, "attributeId": 61444, "dataType": 48, "action": true}}, "indicatorMode": {"enum": ["on", "off", "night"]}},
+      "endpointId":     3
     },
     {
       "description":    "MODKAM Soil Moisture Sensor with Bacchus Firmware",
@@ -82,7 +114,6 @@
     },
     {
       "modelNames":     ["WS7"],
-      "properties":     ["customAttributes"],
       "exposes":        ["action"],
       "options":        {"customAttributes": {"action": {"type": "enum", "clusterId": 18, "attributeId": 85, "dataType": 33}}, "action": {"enum": ["release", "singleClick", "doubleClick", "tripleClick", "hold"]}},
       "endpointId":     [1, 2, 3]
@@ -98,6 +129,27 @@
       "bindings":       ["battery"],
       "reportings":     ["batteryPercentage"],
       "exposes":        ["battery", "smoke", "batteryLow"]
+    }
+  ],
+
+  "Legrand":
+  [
+    {
+      "description":    "Legrand 2-Key Wireless Switch",
+      "modelNames":     ["Double gangs remote switch"],
+      "properties":     ["batteryPercentage"],
+      "bindings":       ["battery"],
+      "reportings":     ["batteryPercentage"],
+      "exposes":        ["battery"],
+      "endpointId":     1
+    },
+    {
+      "modelNames":     ["Double gangs remote switch"],
+      "properties":     ["statusAction", "levelAction"],
+      "bindings":       ["status", "level"],
+      "exposes":        ["action"],
+      "options":        {"action": {"enum": ["on", "off", "moveLevelUp", "moveLevelDown", "stopLevel"]}},
+      "endpointId":     [1, 2]
     }
   ],
 
@@ -158,8 +210,8 @@
     },
     {
       "modelNames":     ["L101Z-SBN"],
-      "properties":     ["thermostat", "customAttributes"],
-      "actions":        ["thermostat", "customAttributes"],
+      "properties":     ["thermostat"],
+      "actions":        ["thermostat"],
       "bindings":       ["thermostat"],
       "reportings":     ["thermostat"],
       "endpointId":     3
@@ -186,8 +238,8 @@
     },
     {
       "modelNames":     ["L101Ze-SBN"],
-      "properties":     ["thermostat", "customAttributes"],
-      "actions":        ["thermostat", "customAttributes"],
+      "properties":     ["thermostat"],
+      "actions":        ["thermostat"],
       "bindings":       ["thermostat"],
       "reportings":     ["thermostat"],
       "endpointId":     3
@@ -263,8 +315,6 @@
     },
     {
       "modelNames":     ["Watermeter_TLSR8258"],
-      "properties":     ["customAttributes"],
-      "actions":        ["customAttributes"],
       "exposes":        ["hotPreset", "coldPreset", "pulseVolume"],
       "options":        {
                           "customAttributes":
@@ -287,12 +337,20 @@
     },
     {
       "modelNames":     ["Watermeter_TLSR8258"],
-      "properties":     ["customAttributes"],
       "exposes":        ["volume"],
       "bindings":       ["energy"],
       "reportings":     ["energy"],
       "options":        {"customAttributes": {"volume": {"type": "value", "clusterId": 1794, "attributeId": 0, "dataType": 37}}},
       "endpointId":     [1, 2]
+    },
+    {
+      "description":    "TS0601 NDIR CO2 Sensor With Slacky Firmware",
+      "modelNames":     ["Tuya_CO2Sensor_r01"],
+      "properties":     ["co2"],
+      "bindings":       ["co2"],
+      "reportings":     ["co2"],
+      "exposes":        ["co2"],
+      "options":        {"reporting": {"maxInterval": 300}}
     }
   ],
 
@@ -345,8 +403,6 @@
     {
       "description":    "Texas Instruments Router",
       "modelNames":     ["ti.router"],
-      "properties":     ["customAttributes"],
-      "actions":        ["customAttributes"],
       "exposes":        ["transmitPower"],
       "options":        {
                           "customAttributes": {"transmitPower": {"type": "value", "clusterId": 0, "attributeId": 4919, "dataType": 40, "action": true}},
@@ -381,8 +437,7 @@
     {
       "description":    "TUYA Temperature and Humidity Sensor with PVVX Firmware",
       "modelNames":     ["TH03Z-bz", "TH03Z-z", "TS0201-bz", "TS0201-z", "ZTH01-bz", "ZTH01-z", "ZTH02-bz", "ZTH02-z"],
-      "properties":     ["batteryPercentage", "temperature", "humidity", "customAttributes"],
-      "actions":        ["customAttributes"],
+      "properties":     ["batteryPercentage", "temperature", "humidity"],
       "bindings":       ["battery", "temperature", "humidity"],
       "reportings":     ["batteryPercentage", "temperature", "humidity"],
       "exposes":        ["battery", "temperature", "humidity", "readInterval", "temperatureOffset", "humidityOffset"],
@@ -405,8 +460,8 @@
     {
       "description":    "Xiaomi Temperature and Humidity Sensor LYWSD03MMC (Type A)",
       "modelNames":     ["LYWSD03MMC"],
-      "properties":     ["batteryPercentage", "temperature", "humidity", "displayMode", "customAttributes"],
-      "actions":        ["displayMode", "customAttributes"],
+      "properties":     ["batteryPercentage", "temperature", "humidity", "displayMode"],
+      "actions":        ["displayMode"],
       "bindings":       ["battery", "temperature", "humidity"],
       "reportings":     ["batteryPercentage", "temperature", "humidity"],
       "exposes":        ["battery", "temperature", "humidity", "enableDisplay", "showSmiley", "displayMode", "temperatureOffset", "humidityOffset"],
@@ -426,8 +481,7 @@
     {
       "description":    "Xiaomi Temperature and Humidity Sensor LYWSD03MMC (Type B)",
       "modelNames":     ["LYWSD03MMC-z", "LYWSD03MMC-bz"],
-      "properties":     ["batteryPercentage", "temperature", "humidity", "customAttributes"],
-      "actions":        ["customAttributes"],
+      "properties":     ["batteryPercentage", "temperature", "humidity"],
       "bindings":       ["battery", "temperature", "humidity"],
       "reportings":     ["batteryPercentage", "temperature", "humidity"],
       "exposes":        ["battery", "temperature", "humidity", "enableDisplay", "showSmiley", "readInterval", "temperatureOffset", "humidityOffset"],
@@ -446,6 +500,26 @@
                           "enableDisplay": {"enum": [true, false]},
                           "readInterval": {"min": 3, "max": 255}
                         }
+    }
+  ],
+
+  "easyiot":
+  [
+    {
+      "description":    "ZB-WB08 8-Key Wireless Switch",
+      "modelNames":     ["ZB-WB08"],
+      "properties":     ["batteryPercentage"],
+      "bindings":       ["battery"],
+      "reportings":     ["batteryPercentage"],
+      "exposes":        ["battery"],
+      "endpointId":     1
+    },
+    {
+      "modelNames":     ["ZB-WB08"],
+      "bindings":       ["status"],
+      "exposes":        ["action"],
+      "options":        {"customCommands": {"action": {"clusterId": 6}}, "action": {"enum": ["hold", "doubleClick", "singleClick"]}},
+      "endpointId":     [1, 2, 3, 4, 5, 6, 7, 8]
     }
   ],
 
@@ -474,7 +548,7 @@
     {
       "description":    "Woolley 13A Smart Plug BSD29",
       "modelNames":     ["CK-BL702-SWP-01(7020)"],
-      "properties":     ["status", "customAttributes"],
+      "properties":     ["status"],
       "actions":        ["status"],
       "bindings":       ["status"],
       "reportings":     ["status"],

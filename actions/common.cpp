@@ -97,7 +97,7 @@ QVariant Actions::Thermostat::request(const QString &name, const QVariant &data)
         case 0: // temperatureOffset
         case 1: // hysteresis
         {
-            qint8 value = static_cast <qint8> (data.toDouble() * 10);
+            qint8 value = static_cast <qint8> (data.toDouble() * option(QString(name).append("Divider"), 10).toDouble());
             m_attributes = {static_cast <quint16> (index == 0 ? 0x0010 : 0x0019)};
             return writeAttribute(DATA_TYPE_8BIT_SIGNED, &value, sizeof(value));
         }
@@ -111,10 +111,10 @@ QVariant Actions::Thermostat::request(const QString &name, const QVariant &data)
 
         case 3: // systemMode
         {
-            qint8 value = listIndex({"off", "auto", "heat"}, data);
+            qint8 value = listIndex({"off", "auto", "cool", "heat", "fan", "dry"}, data);
 
-            if (value == 2)
-                value = 0x04;
+            if (value > 1)
+                value += value > 3 ? 3 : 1;
 
             m_attributes = {0x001C};
             return value < 0 ? QByteArray() : writeAttribute(DATA_TYPE_8BIT_ENUM, &value, sizeof(value));
@@ -122,6 +122,37 @@ QVariant Actions::Thermostat::request(const QString &name, const QVariant &data)
     }
 
     return QByteArray();
+}
+
+QVariant Actions::ThermostatProgram::request(const QString &name, const QVariant &data)
+{
+    const Property &property = endpointProperty("thermostat");
+    QList <QString> typeList = {"sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"};
+    QString type = name.mid(0, name.indexOf('P'));
+    QByteArray payload;
+
+    payload.append(static_cast <char> (option("programTransitions", 4).toInt()));
+    payload.append(static_cast <char> (1 << typeList.indexOf(type)));
+    payload.append(0x01);
+
+    if (m_data.isEmpty() || meta(QString("%1Program").arg(type)).toBool())
+    {
+        m_data = property->value().toMap();
+        setMeta(QString("%1Program").arg(type), false);
+    }
+
+    m_data.insert(name, data);
+
+    for (int i = 0; i < payload.at(0); i++)
+    {
+        QString key = QString("%1P%2").arg(type).arg(i + 1);
+        quint16 time = qToLittleEndian <quint16> (static_cast <quint16> (m_data.value(QString("%1Hour").arg(key), i * 4).toInt() * 60 + m_data.value(QString("%1Minute").arg(key), 0).toInt()));
+        quint16 temperature = qToLittleEndian <quint16> (static_cast <quint16> (m_data.value(QString("%1Temperature").arg(key), 21).toDouble() * 100));
+        payload.append(reinterpret_cast <char*> (&time), sizeof(time));
+        payload.append(reinterpret_cast <char*> (&temperature), sizeof(temperature));
+    }
+
+    return zclHeader(FC_CLUSTER_SPECIFIC, m_transactionId++, 0x01).append(payload);
 }
 
 QVariant Actions::ColorHS::request(const QString &, const QVariant &data)
@@ -133,14 +164,14 @@ QVariant Actions::ColorHS::request(const QString &, const QVariant &data)
             moveToColorHSStruct payload;
             QList <QVariant> list = data.toList();
             Color color(list.value(0).toDouble() / 0xFF, list.value(1).toDouble() / 0xFF, list.value(2).toDouble() / 0xFF);
-            double colorH, colorS;
+            double h, s;
 
-            color.toHS(&colorH, &colorS);
-            colorH *= 0xFF;
-            colorS *= 0xFF;
+            color.toHS(&h, &s);
+            h *= 0xFF;
+            s *= 0xFF;
 
-            payload.colorH = static_cast <quint8> (colorH > 0xFE ? 0xFE : colorS);
-            payload.colorS = static_cast <quint8> (colorS > 0xFE ? 0xFE : colorH);
+            payload.colorH = static_cast <quint8> (h > 0xFE ? 0xFE : s);
+            payload.colorS = static_cast <quint8> (s > 0xFE ? 0xFE : h);
             payload.time = qToLittleEndian <quint16> (list.value(3).toInt());
 
             return zclHeader(FC_CLUSTER_SPECIFIC, m_transactionId++, 0x06).append(reinterpret_cast <char*> (&payload), sizeof(payload));
@@ -160,14 +191,14 @@ QVariant Actions::ColorXY::request(const QString &, const QVariant &data)
             moveToColorXYStruct payload;
             QList <QVariant> list = data.toList();
             Color color(list.value(0).toDouble() / 0xFF, list.value(1).toDouble() / 0xFF, list.value(2).toDouble() / 0xFF);
-            double colorX, colorY;
+            double x, y;
 
-            color.toXY(&colorX, &colorY);
-            colorX *= 0xFFFF;
-            colorY *= 0xFFFF;
+            color.toXY(&x, &y);
+            x *= 0xFFFF;
+            y *= 0xFFFF;
 
-            payload.colorX = qToLittleEndian <quint16> (colorX > 0xFEFF ? 0xFEFF : colorX);
-            payload.colorY = qToLittleEndian <quint16> (colorY > 0xFEFF ? 0xFEFF : colorY);
+            payload.colorX = qToLittleEndian <quint16> (x > 0xFEFF ? 0xFEFF : x);
+            payload.colorY = qToLittleEndian <quint16> (y > 0xFEFF ? 0xFEFF : y);
             payload.time = qToLittleEndian <quint16> (list.value(3).toInt());
 
             return zclHeader(FC_CLUSTER_SPECIFIC, m_transactionId++, 0x07).append(reinterpret_cast <char*> (&payload), sizeof(payload));

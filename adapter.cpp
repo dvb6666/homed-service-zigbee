@@ -7,7 +7,7 @@
 #include "logger.h"
 #include "zcl.h"
 
-Adapter::Adapter(QSettings *config, QObject *parent) : QObject(parent), m_receiveTimer(new QTimer(this)), m_resetTimer(new QTimer(this)), m_permitJoinTimer(new QTimer(this)), m_serial(new QSerialPort(this)), m_socket(new QTcpSocket(this)), m_serialError(false), m_connected(false), m_permitJoinAddress(PERMIT_JOIN_BROARCAST_ADDRESS), m_permitJoin(false), m_errorCount(0)
+Adapter::Adapter(QSettings *config, QObject *parent) : QObject(parent), m_receiveTimer(new QTimer(this)), m_resetTimer(new QTimer(this)), m_permitJoinTimer(new QTimer(this)), m_serial(new QSerialPort(this)), m_socket(new QTcpSocket(this)), m_ready(false), m_serialError(false), m_connected(false), m_permitJoinAddress(PERMIT_JOIN_BROARCAST_ADDRESS), m_permitJoin(false), m_errorCount(0)
 {
     QString portName = config->value("zigbee/port", "/dev/ttyUSB0").toString();
 
@@ -42,6 +42,7 @@ Adapter::Adapter(QSettings *config, QObject *parent) : QObject(parent), m_receiv
         connect(m_socket, &QTcpSocket::connected, this, &Adapter::socketConnected);
     }
 
+    m_timeout = static_cast <quint16> (config->value("zigbee/timeout", 10).toInt());
     m_panId = static_cast <quint16> (config->value("zigbee/panid").toString().toInt(nullptr, 16));
     m_channel = static_cast <quint8> (config->value("zigbee/channel").toInt());
     m_power = static_cast <quint8> (config->value("zigbee/power", 20).toInt());
@@ -130,6 +131,8 @@ Adapter::~Adapter(void)
 
 void Adapter::init(void)
 {
+    m_ready = false;
+
     if (m_device == m_serial)
     {
         if (m_serial->isOpen())
@@ -314,7 +317,7 @@ void Adapter::socketConnected(void)
 
 void Adapter::startTimer(void)
 {
-    m_receiveTimer->start(RECEIVE_TIMEOUT);
+    m_receiveTimer->start(m_timeout);
 }
 
 void Adapter::readyRead(void)

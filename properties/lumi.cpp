@@ -313,6 +313,27 @@ void PropertiesLUMI::Data::parseData(quint16 dataPoint, const QByteArray &data, 
             break;
         }
 
+        case 0x0276:
+        {
+            QList <QString> list = {"Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"};
+
+            setMeta("program", true);
+
+            for (int i = 0; i < list.count(); i++)
+                map.insert(QString("schedule%1").arg(list.at(i)), data.at(1) >> (i + 1) & 1 ? true : false);
+
+            for (int i = 0; i < 4; i++)
+            {
+                QString key = QString("scheduleP%1").arg(i + 1);
+                quint16 time = qFromBigEndian <quint16> (*(reinterpret_cast <const quint16*> (data.constData() + i * 6 + 2))) & 0x7FFF;
+                map.insert(QString("%1Hour").arg(key), static_cast <quint8> (time / 60));
+                map.insert(QString("%1Minute").arg(key), static_cast <quint8> (time % 60));
+                map.insert(QString("%1Temperature").arg(key), qFromBigEndian <quint16> (*(reinterpret_cast <const quint16*> (data.constData() + i * 6 + 6))) / 100.0);
+            }
+
+            break;
+        }
+
         case 0x027E:
         {
             map.insert("sensorType", data.at(0) ? "external" : "internal");
@@ -430,14 +451,33 @@ void PropertiesLUMI::ButtonAction::parseAttribte(quint16, quint16 attributeId, c
     if (attributeId != 0x0000 && attributeId != 0x8000)
         return;
 
+    if (m_hold)
+    {
+        m_check = false;
+        m_hold = false;
+        m_value = "release";
+        return;
+    }
+
     switch (static_cast <quint8> (data.at(0)))
     {
-        case 0x00: m_value = "singleClick"; break;
+        case 0x01: m_value = "singleClick"; break;
         case 0x02: m_value = "doubleClick"; break;
         case 0x03: m_value = "tripleClick"; break;
         case 0x04: m_value = "quadrupleClick"; break;
         case 0x80: m_value = "multipleClick"; break;
     }
+
+    m_check = data.at(0) ? false : true;
+}
+
+void PropertiesLUMI::ButtonAction::resetValue(void)
+{
+    if (!m_check)
+        return;
+
+    m_hold = true;
+    m_value = "hold";
 }
 
 void PropertiesLUMI::SwitchAction::parseAttribte(quint16, quint16 attributeId, const QByteArray &data)

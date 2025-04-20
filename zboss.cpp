@@ -203,7 +203,7 @@ bool ZBoss::sendRequest(quint16 command, const QByteArray &data, quint8 id)
     QByteArray payload;
     quint16 crc;
 
-    logDebug(m_adapterDebug) << "-->" << QString::asprintf("0x%04x", command) << data.toHex(':');
+    logDebug(m_adapterDebug) << "-->" << QString::asprintf("0x%04x", command) << QByteArray(1, static_cast <char> (id)).append(data).toHex(':');
 
     m_command = command;
     m_replyStatus = 0xFF;
@@ -588,6 +588,7 @@ bool ZBoss::startCoordinator(void)
 
     ieeeAddress = qToBigEndian(qFromLittleEndian(ieeeAddress));
     m_ieeeAddress = QByteArray(reinterpret_cast <char*> (&ieeeAddress), sizeof(ieeeAddress));
+    m_ready = true;
 
     emit coordinatorReady();
     return true;
@@ -629,6 +630,13 @@ void ZBoss::parseData(void)
 
         lowLevelHeader = reinterpret_cast <zbossLowLevelHeaderStruct*> (m_buffer.data() + offset);
         length = qFromLittleEndian(lowLevelHeader->length) + 2;
+
+        if (m_buffer.length() < length)
+        {
+            logWarning << QString("Frame %1 length (%2 bytes) is less thаn expected (%3 bytes)").arg(QString(m_buffer.mid(offset, length).toHex(':'))).arg(m_buffer.length()).arg(length);
+            m_buffer.clear();
+            return;
+        }
 
         if (lowLevelHeader->crc != getCRC8(reinterpret_cast <quint8*> (lowLevelHeader) + 2, sizeof(zbossLowLevelHeaderStruct) - 3))
         {

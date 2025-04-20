@@ -11,7 +11,9 @@
 void OTA::refresh(const QDir &dir)
 {
     QList <QString> list = dir.entryList(QDir::Files);
+    QByteArray signature = QByteArray::fromHex("1ef1ee0b"), buffer;
     otaFileHeaderStruct header;
+    int position;
 
     for (int i = 0; i < list.count(); i++)
     {
@@ -25,21 +27,15 @@ void OTA::refresh(const QDir &dir)
         if (!file.open(QFile::ReadOnly))
             continue;
 
-        while (m_imageOffset + sizeof(header) <= static_cast <size_t> (file.size()))
+        buffer = file.read(OTA_FILE_BUFFER_SIZE);
+        position = buffer.indexOf(signature);
+
+        if (position >= 0 && position + sizeof(header) <= static_cast <size_t> (file.size()))
         {
-            file.seek(m_imageOffset);
+            file.seek(position);
             memcpy(&header, file.read(sizeof(header)).constData(), sizeof(header));
-
-            if (qFromLittleEndian(header.fileIdentifier) == 0x0beef11e)
-            {
-                check = true;
-                break;
-            }
-
-            m_imageOffset++;
+            check = true;
         }
-
-        file.close();
 
         if (check && qFromLittleEndian(header.manufacturerCode) == m_manufacturerCode && qFromLittleEndian(header.imageType) == m_imageType && qFromLittleEndian(header.imageSize) <= file.size())
         {
@@ -299,9 +295,6 @@ void DeviceList::setupDevice(const Device &device)
     if (device->options().contains("powerSource"))
         device->setPowerSource(static_cast <quint8> (device->options().value("powerSource").toInt()));
 
-    if (device->interviewStatus() != InterviewStatus::Finished && manufacturerName == "TUYA")
-        device->options().insert("tuyaMagic", true);
-
     if (!device->supported())
     {
         logWarning << device << "manufacturer name" << device->manufacturerName() << "and model name" << device->modelName() << "not found in library";
@@ -318,6 +311,15 @@ void DeviceList::setupDevice(const Device &device)
 
 void DeviceList::removeDevice(const Device &device)
 {
+    for (auto it = device->endpoints().begin(); it != device->endpoints().end(); it++)
+    {
+        if (!it.value()->timer()->isActive())
+            continue;
+
+        disconnect(it.value()->timer(), &QTimer::timeout, this, &DeviceList::updateEndpoint);
+        it.value()->timer()->stop();
+    }
+
     if (device->name() != device->ieeeAddress().toHex(':'))
     {
         device->setRemoved(true);
@@ -342,7 +344,9 @@ void DeviceList::identityHandler(const Device &device, QString &manufacturerName
         "131c854783bc45c9b2ac58088d09571c",
         "585fdfb8c2304119a2432e9845cf2623",
         "52debf035a1b4a66af56415474646c02",
+        "700ae5aab3414ec09c1872efe7b8755a",
         "75a4bfe8ef9c4350830a25d13e3ab068",
+        "895a2d80097f4ae2b2d40500d5e03dcc",
         "b2e57a0f606546cd879a1a54790827d6",
         "b7e305eb329f497384e966fe3fb0ac69",
         "c670e231d1374dbc9e3c6a9fffbd0ae6",
@@ -389,8 +393,19 @@ void DeviceList::identityHandler(const Device &device, QString &manufacturerName
         return;
     }
 
+    if (manufacturerName == "IKEA of Sweden" && modelName != "RODRET Dimmer" && device->batteryPowered())
+    {
+        QList <QString> list = device->firmware().split('.');
+
+        if (list.value(0).toInt() < 2 || (list.value(0).toInt() == 2 && list.value(1).toInt() < 4))
+            device->options().insert("battery", QMap <QString, QVariant> {{"undivided", true}});
+
+        return;
+    }
+
     if (QRegExp("^TS\\d{3}[0-9EF][AB]{0,1}$").exactMatch(modelName) || QRegExp("^_TZ[2,3,E]\\d{3}_\\S+$").exactMatch(manufacturerName) || manufacturerName.startsWith("_TYZB01_") || manufacturerName.startsWith("TUYA"))
     {
+        device->options().insert("tuyaMagic", true);
         modelName = manufacturerName;
         manufacturerName = "TUYA";
     }
@@ -400,6 +415,7 @@ void DeviceList::setupEndpoint(const Endpoint &endpoint, const QJsonObject &json
 {
     const Device &device = endpoint->device();
     QJsonArray properties = json.value("properties").toArray(), actions = json.value("actions").toArray(), bindings = json.value("bindings").toArray(), reportings = json.value("reportings").toArray(), polls = json.value("polls").toArray(), exposes = json.value("exposes").toArray();
+    QMap <QString, QVariant> customCommands = device->options().value(QString("customCommands_%2").arg(QString::number(endpoint->id())), device->options().value("customCommands")).toMap(), customAttributes = device->options().value(QString("customAttributes_%2").arg(QString::number(endpoint->id())), device->options().value("customAttributes")).toMap();
     int bindingIndex = 0;
     bool startTimer = false;
 
@@ -410,48 +426,15 @@ void DeviceList::setupEndpoint(const Endpoint &endpoint, const QJsonObject &json
         if (type)
         {
             Property property(reinterpret_cast <PropertyObject*> (QMetaType::create(type)));
-            QVariant timeout = device->options().value(QString(property->name()).append("ResetTimeout"));
 
             property->setParent(endpoint.data());
             property->setMultiple(multiple);
-            property->setTimeout(static_cast <quint32> (timeout.toInt()));
+            property->setTimeout(static_cast <quint32> (device->options().value(QString(property->name()).append("ResetTimeout")).toDouble() * 1000));
 
             if (property->timeout() || property->clusters().contains(CLUSTER_IAS_WD))
                 startTimer = true;
 
             endpoint->properties().append(property);
-            continue;
-        }
-
-        if (it->toString() == "customCommands")
-        {
-            QMap <QString, QVariant> options = device->options().value(multiple ? QString("customCommands_%2").arg(QString::number(endpoint->id())) : "customCommands").toMap();
-
-            for (auto it = options.begin(); it != options.end(); it++)
-            {
-                QMap <QString, QVariant> option = it.value().toMap();
-                Property property(new PropertiesCustom::Command(it.key(), static_cast <quint16> (option.value("clusterId").toInt())));
-                property->setParent(endpoint.data());
-                property->setMultiple(multiple);
-                endpoint->properties().append(property);
-            }
-
-            continue;
-        }
-
-        if (it->toString() == "customAttributes")
-        {
-            QMap <QString, QVariant> options = device->options().value(QString("customAttributes_%2").arg(QString::number(endpoint->id())), device->options().value("customAttributes")).toMap();
-
-            for (auto it = options.begin(); it != options.end(); it++)
-            {
-                QMap <QString, QVariant> option = it.value().toMap();
-                Property property(new PropertiesCustom::Attribute(it.key(), option.value("type").toString(), static_cast <quint16> (option.value("clusterId").toInt()), static_cast <quint16> (option.value("attributeId").toInt()), static_cast <quint8> (option.value("dataType").toInt()), option.value("divider").toDouble()));
-                property->setParent(endpoint.data());
-                property->setMultiple(multiple);
-                endpoint->properties().append(property);
-            }
-
             continue;
         }
 
@@ -467,26 +450,6 @@ void DeviceList::setupEndpoint(const Endpoint &endpoint, const QJsonObject &json
             Action action(reinterpret_cast <ActionObject*> (QMetaType::create(type)));
             action->setParent(endpoint.data());
             endpoint->actions().append(action);
-            continue;
-        }
-
-        if (it->toString() == "customAttributes")
-        {
-            QMap <QString, QVariant> options = device->options().value(QString("customAttributes_%2").arg(QString::number(endpoint->id())), device->options().value("customAttributes")).toMap();
-
-            for (auto it = options.begin(); it != options.end(); it++)
-            {
-                QMap <QString, QVariant> option = it.value().toMap();
-                Action action;
-
-                if (!option.value("action").toBool())
-                    continue;
-
-                action = Action(new ActionsCustom::Attribute(it.key(), option.value("type").toString(), static_cast <quint16> (option.value("clusterId").toInt()), static_cast <quint16> (option.value("manufacturerCode").toInt()), static_cast <quint16> (option.value("attributeId").toInt()), static_cast <quint8> (option.value("dataType").toInt()), option.value("divider").toDouble()));
-                action->setParent(endpoint.data());
-                endpoint->actions().append(action);
-            }
-
             continue;
         }
 
@@ -535,6 +498,63 @@ void DeviceList::setupEndpoint(const Endpoint &endpoint, const QJsonObject &json
         logWarning << device << endpoint << "poll" << it->toString() << "unrecognized";
     }
 
+    for (auto it = customCommands.begin(); it != customCommands.end(); it++)
+    {
+        QMap <QString, QVariant> option = it.value().toMap();
+        Property property(new PropertiesCustom::Command(it.key(), static_cast <quint16> (option.value("clusterId").toInt())));
+        property->setParent(endpoint.data());
+        property->setMultiple(multiple);
+        endpoint->properties().append(property);
+    }
+
+    for (auto it = customAttributes.begin(); it != customAttributes.end(); it++)
+    {
+        QMap <QString, QVariant> option = it.value().toMap();
+        QString type = option.value("type").toString();
+        quint16 clusterId = static_cast <quint16> (option.value("clusterId").toInt()), attributeId = static_cast <quint16> (option.value("attributeId").toInt());
+        quint8 dataType =static_cast <quint8> (option.value("dataType").toInt());
+        double divider = option.value("divider").toDouble();
+        Property property;
+
+        if (!dataType)
+            continue;
+
+        property = Property(new PropertiesCustom::Attribute(it.key(), type, clusterId, attributeId, dataType, divider));
+        property->setParent(endpoint.data());
+        property->setMultiple(multiple);
+        endpoint->properties().append(property);
+
+        if (option.value("action").toBool())
+        {
+            Action action(new ActionsCustom::Attribute(it.key(), type, clusterId, static_cast <quint16> (option.value("manufacturerCode").toInt()), attributeId, dataType, divider));
+            action->setParent(endpoint.data());
+            endpoint->actions().append(action);
+        }
+
+        if (option.value("binding").toBool())
+        {
+            bool check = true;
+
+            for (int i = 0; i < endpoint->bindings().count(); i++)
+            {
+                if (endpoint->bindings().at(i)->clusterId() == clusterId)
+                {
+                    check = false;
+                    break;
+                }
+            }
+
+            if (check)
+                endpoint->bindings().append(Binding(new BindingObject(it.key(), clusterId)));
+        }
+
+        if (option.contains("reporting"))
+        {
+            QMap <QString, QVariant> reporting = option.value("reporting").toMap();
+            endpoint->reportings().append(Reporting(new ReportingObject(it.key(), clusterId, attributeId, option.value("dataType").toInt(), reporting.value("minInterval", 0).toInt(), reporting.value("maxInterval", 3600).toInt(), reporting.value("valueChange", 0).toInt())));
+        }
+    }
+
     for (auto it = exposes.begin(); it != exposes.end(); it++)
     {
         QString exposeName = it->toString(), itemName = exposeName.split('_').value(0), optionName = multiple ? QString("%1_%2").arg(itemName, QString::number(endpoint->id())) : exposeName;
@@ -560,7 +580,7 @@ void DeviceList::setupEndpoint(const Endpoint &endpoint, const QJsonObject &json
 
     if (!endpoint->polls().isEmpty())
     {
-        quint32 pollInterval = static_cast <quint32> (device->options().value(multiple ? QString("pollInterval_%1").arg(endpoint->id()) : "pollInterval").toInt());
+        quint32 pollInterval = static_cast <quint32> (device->options().value(multiple ? QString("pollInterval_%1").arg(endpoint->id()) : "pollInterval").toDouble() * 1000);
 
         for (int i = 0; i < endpoint->polls().count(); i++)
         {
@@ -579,8 +599,8 @@ void DeviceList::setupEndpoint(const Endpoint &endpoint, const QJsonObject &json
     if (!startTimer)
         return;
 
-    connect(endpoint->timer(), &QTimer::timeout, this, &DeviceList::endpointTimeout, Qt::UniqueConnection);
-    endpoint->timer()->start(1000);
+    connect(endpoint->timer(), &QTimer::timeout, this, &DeviceList::updateEndpoint, Qt::UniqueConnection);
+    endpoint->timer()->start(UPDATE_ENDPOINT_INTERVAL);
 }
 
 void DeviceList::recognizeDevice(const Device &device)
@@ -1338,10 +1358,10 @@ void DeviceList::writeProperties(void)
     logWarning << "Properties not stored, file" << m_propertiesFile.fileName() << "error:" << m_propertiesFile.errorString();
 }
 
-void DeviceList::endpointTimeout(void)
+void DeviceList::updateEndpoint(void)
 {
     EndpointObject *endpoint = reinterpret_cast <EndpointObject*> (sender()->parent());
-    qint64 time = QDateTime::currentSecsSinceEpoch();
+    qint64 time = QDateTime::currentMSecsSinceEpoch();
 
     for (int i = 0; i < endpoint->properties().count(); i++)
     {

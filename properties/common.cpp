@@ -7,7 +7,7 @@ using namespace Properties;
 
 void Properties::BatteryVoltage::parseAttribte(quint16, quint16 attributeId, const QByteArray &data)
 {
-    if (attributeId != 0x0020)
+    if (attributeId != 0x0020 || data.at(0) == 0xFF)
         return;
 
     m_value = percentage(2850, 3000, static_cast <quint8> (data.at(0)) * 100);
@@ -15,7 +15,7 @@ void Properties::BatteryVoltage::parseAttribte(quint16, quint16 attributeId, con
 
 void Properties::BatteryPercentage::parseAttribte(quint16, quint16 attributeId, const QByteArray &data)
 {
-    if (attributeId != 0x0021)
+    if (attributeId != 0x0021 || data.at(0) == 0xFF)
         return;
 
     m_value = static_cast <quint8> (data.at(0)) / (option().toMap().value("undivided").toBool() ? 1.0 : 2.0);
@@ -105,7 +105,8 @@ void Properties::Thermostat::parseAttribte(quint16, quint16 attributeId, const Q
         case 0x0010:
         case 0x0019:
         {
-            map.insert(attributeId == 0x0010 ? "temperatureOffset" : "hysteresis", static_cast <qint8> (data.at(0)) / 10.0);
+            QString name = attributeId == 0x0010 ? "temperatureOffset" : "hysteresis";
+            map.insert(name, static_cast <qint8> (data.at(0)) / option(QString(name).append("Divider"), 10).toDouble());
             break;
         }
 
@@ -126,9 +127,41 @@ void Properties::Thermostat::parseAttribte(quint16, quint16 attributeId, const Q
 
         case 0x001E:
         {
-            map.insert("running", data.at(0) == 0x04 ? true : false);
+            map.insert("running", data.at(0) ? true : false);
             break;
         }
+    }
+
+    m_value = map.isEmpty() ? QVariant() : map;
+}
+
+void Thermostat::parseCommand(quint16, quint8 commandId, const QByteArray &payload)
+{
+    QMap <QString, QVariant> map = m_value.toMap();
+    QList <QString> typeList = {"sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"};
+    QString type;
+
+    if (commandId != 0x00)
+        return;
+
+    for (int i = 0; i < typeList.count(); i++)
+    {
+        if (payload.at(1) & (1 << i))
+        {
+            type = typeList.at(i);
+            break;
+        }
+    }
+
+    setMeta(QString("%1Program").arg(type), true);
+
+    for (int i = 0; i < payload.at(0); i++)
+    {
+        QString key = QString("%1P%2").arg(type).arg(i + 1);
+        quint16 time = qFromLittleEndian <quint16> (*(reinterpret_cast <const quint16*> (payload.constData() + i * 4 + 3)));
+        map.insert(QString("%1Hour").arg(key), static_cast <quint8> (time / 60));
+        map.insert(QString("%1Minute").arg(key), static_cast <quint8> (time % 60));
+        map.insert(QString("%1Temperature").arg(key), (qFromLittleEndian <quint16> (*(reinterpret_cast <const quint16*> (payload.constData() + i * 4 + 5)))) / 100.0);
     }
 
     m_value = map.isEmpty() ? QVariant() : map;
@@ -139,17 +172,17 @@ void Properties::ColorHS::parseAttribte(quint16, quint16 attributeId, const QByt
     switch (attributeId)
     {
         case 0x0000:
-            m_colorH = static_cast <quint8> (data.at(0));
+            m_h = static_cast <quint8> (data.at(0));
             break;
 
         case 0x0001:
-            m_colorS = static_cast <quint8> (data.at(0));
+            m_s = static_cast <quint8> (data.at(0));
             break;
     }
 
-    if (m_colorH.isValid() || m_colorS.isValid())
+    if (m_h.isValid() || m_s.isValid())
     {
-        Color color = Color::fromHS(m_colorH.toDouble() / 0xFF, m_colorS.toDouble() / 0xFF);
+        Color color = Color::fromHS(m_h.toDouble() / 0xFF, m_s.toDouble() / 0xFF);
         m_value = QList <QVariant> {static_cast <quint8> (color.r() * 0xFF), static_cast <quint8> (color.g() * 0xFF), static_cast <quint8> (color.b() * 0xFF)};
     }
 }
@@ -165,18 +198,18 @@ void Properties::ColorXY::parseAttribte(quint16, quint16 attributeId, const QByt
     {
         case 0x0003:
             memcpy(&value, data.constData(), data.length());
-            m_colorX = qFromLittleEndian(value);
+            m_x = qFromLittleEndian(value);
             break;
 
         case 0x0004:
             memcpy(&value, data.constData(), data.length());
-            m_colorY = qFromLittleEndian(value);
+            m_y = qFromLittleEndian(value);
             break;
     }
 
-    if (m_colorX.isValid() || m_colorY.isValid())
+    if (m_x.isValid() || m_y.isValid())
     {
-        Color color = Color::fromXY(m_colorX.toDouble() / 0xFFFF, m_colorY.toDouble() / 0xFFFF);
+        Color color = Color::fromXY(m_x.toDouble() / 0xFFFF, m_y.toDouble() / 0xFFFF);
         m_value = QList <QVariant> {static_cast <quint8> (color.r() * 0xFF), static_cast <quint8> (color.g() * 0xFF), static_cast <quint8> (color.b() * 0xFF)};
     }
 }

@@ -1,5 +1,6 @@
 #include <QtEndian>
 #include <QtMath>
+#include "color.h"
 #include "tuya.h"
 
 void PropertiesTUYA::Data::parseCommand(quint16, quint8 commandId, const QByteArray &payload)
@@ -66,109 +67,93 @@ void PropertiesTUYA::Data::parseCommand(quint16, quint8 commandId, const QByteAr
 
 void PropertiesTUYA::DataPoints::update(quint8 dataPoint, const QVariant &data)
 {
-    QMap <QString, QVariant> map = m_value.toMap();
-    QList <QVariant> list = option().toMap().value(QString::number(dataPoint)).toList();
+    QMap <QString, QVariant> map = m_value.toMap(), item = option().toMap().value(QString::number(dataPoint)).toMap(), options;
     QList <QString> typeList = {"raw", "bool", "value", "enum"};
+    QString name = item.value("name").toString();
 
-    for (int i = 0; i < list.count(); i++)
+    if (name.isEmpty())
+        return;
+
+    options = option(name).toMap();
+
+    switch (typeList.indexOf(item.value("type").toString()))
     {
-        QMap <QString, QVariant> item = list.at(i).toMap(), options;
-        QString name = item.value("name").toString();
-
-        if(name.isEmpty())
-            continue;
-
-        options = option(name).toMap();
-
-        switch (typeList.indexOf(item.value("type").toString()))
+        case 0: // raw
         {
-            case 0: // raw
-            {
-                QList <QString> modelList = {"_TZE200_bkkmqmyo", "_TZE200_eaac7dkw", "_TZE204_bkkmqmyo", "_TZE204_wbhaespm"}, nameList = name.split('_');
-                QByteArray payload = data.toByteArray();
-                quint16 value = 0;
+            QList <QString> modelList = {"_TZE200_bkkmqmyo", "_TZE200_eaac7dkw", "_TZE204_bkkmqmyo", "_TZE204_wbhaespm"}, nameList = name.split('_');
+            QByteArray payload = data.toByteArray();
+            quint16 value = 0;
 
-                if (nameList.value(0) != "electricity")
-                    break;
-
-                if (!modelList.contains(manufacturerName()))
-                {
-                    quint8 id = static_cast <quint8> (nameList.value(1).toInt());
-
-                    memcpy(&value, payload.constData(), sizeof(value));
-                    map.insert(id ? QString("voltage_%1").arg(id) : "voltage", qFromBigEndian(value) / 10.0);
-
-                    memcpy(&value, payload.constData() + 3, sizeof(value));
-                    map.insert(id ? QString("current_%1").arg(id) : "current", qFromBigEndian(value) / 1000.0);
-
-                    memcpy(&value, payload.constData() + 6, sizeof(value));
-                    map.insert(id ? QString("power_%1").arg(id) : "power", qFromBigEndian(value));
-                }
-                else
-                {
-                    memcpy(&value, payload.constData() + 11, sizeof(value));
-                    map.insert("current", qFromBigEndian(value) / 1000.0);
-
-                    memcpy(&value, payload.constData() + 13, sizeof(value));
-                    map.insert("voltage", qFromBigEndian(value) / 10.0);
-                }
-
+            if (nameList.value(0) != "electricity")
                 break;
+
+            if (!modelList.contains(manufacturerName()))
+            {
+                quint8 id = static_cast <quint8> (nameList.value(1).toInt());
+
+                memcpy(&value, payload.constData(), sizeof(value));
+                map.insert(id ? QString("voltage_%1").arg(id) : "voltage", qFromBigEndian(value) / 10.0);
+
+                memcpy(&value, payload.constData() + 3, sizeof(value));
+                map.insert(id ? QString("current_%1").arg(id) : "current", qFromBigEndian(value) / 1000.0);
+
+                memcpy(&value, payload.constData() + 6, sizeof(value));
+                map.insert(id ? QString("power_%1").arg(id) : "power", qFromBigEndian(value));
+            }
+            else
+            {
+                memcpy(&value, payload.constData() + 11, sizeof(value));
+                map.insert("current", qFromBigEndian(value) / 1000.0);
+
+                memcpy(&value, payload.constData() + 13, sizeof(value));
+                map.insert("voltage", qFromBigEndian(value) / 10.0);
             }
 
-            case 1: // bool
-            {
-                bool check = item.value("invert").toBool() ? !data.toBool() : data.toBool();
-                QString value = option(name).toMap().value("enum").toStringList().value(check ? 1 : 0);
+            break;
+        }
 
-                if (value.isEmpty())
-                    map.insert(name, check);
-                else
-                    map.insert(name, value);
+        case 1: // bool
+        {
+            bool check = item.value("invert").toBool() ? !data.toBool() : data.toBool();
+            QString value = option(name).toMap().value("enum").toStringList().value(check ? 1 : 0);
 
-                break;
-            }
-
-            case 2: // value
-            {
-                bool hasMin, hasMax;
-                double min = options.value("min").toDouble(&hasMin), max = options.value("max").toDouble(&hasMax), value = data.toInt() / item.value("divider", 1).toDouble() / item.value("propertyDivider", 1).toDouble() + item.value("offset").toDouble();
-
-                if (item.value("round").toBool())
-                    value = round(value);
-
-                if ((hasMin && value < min) || (hasMax && value > max))
-                    break;
-
+            if (value.isEmpty())
+                map.insert(name, check);
+            else
                 map.insert(name, value);
+
+            break;
+        }
+
+        case 2: // value
+        {
+            bool hasMin, hasMax;
+            double min = options.value("min").toDouble(&hasMin), max = options.value("max").toDouble(&hasMax), value = data.toInt() / item.value("divider", 1).toDouble() / item.value("propertyDivider", 1).toDouble() + item.value("offset").toDouble();
+
+            if (item.value("round").toBool())
+                value = round(value);
+
+            if ((hasMin && value < min) || (hasMax && value > max))
                 break;
-            }
 
-            case 3: // enum
+            map.insert(name, value);
+            break;
+        }
+
+        case 3: // enum
+        {
+            if (options.contains("enum"))
             {
-                if (options.contains("enum"))
-                {
-                    QString value = options.value("enum").toStringList().value(data.toInt());
+                QString value = options.value("enum").toStringList().value(data.toInt());
 
-                    if (!value.isEmpty())
-                        map.insert(name, value);
-
-                    break;
-                }
-
-                map.insert(name, data.toInt());
-                break;
-            }
-
-            default:
-            {
-                QVariant value = item.value("value");
-
-                if (value.isValid())
+                if (!value.isEmpty())
                     map.insert(name, value);
 
                 break;
             }
+
+            map.insert(name, data.toInt());
+            break;
         }
     }
 
@@ -212,7 +197,7 @@ void PropertiesTUYA::DailyThermostatProgram::update(quint8 dataPoint, const QVar
 
         if (!modelList.contains(manufacturerName()))
         {
-            for (int i = 0; i < (option("thermostatProgram").toString() != "extended" ? 4 : 6); i++)
+            for (int i = 0; i < option("programTransitions", 4).toInt(); i++)
             {
                 QString key = QString("%1P%2").arg(type).arg(i + 1);
                 map.insert(QString("%1Hour").arg(key), static_cast <quint8> (program.at(i * 4)));
@@ -251,6 +236,37 @@ void PropertiesTUYA::MoesThermostatProgram::update(quint8 dataPoint, const QVari
         {
             double value = static_cast <double> (program.at(i));
             map.insert(QString("%1P%2%3").arg(typeList.value(i / 12)).arg(i / 3 % 4 + 1).arg(nameList.value(i % 3)), (i + 1) % 3 ? value : value / 2);
+        }
+    }
+
+    m_value = map.isEmpty() ? QVariant() : map;
+}
+
+void PropertiesTUYA::LedController::update(quint8 dataPoint, const QVariant &data)
+{
+    QMap <QString, QVariant> map = m_value.toMap();
+
+    if (dataPoint == 0x3D)
+    {
+        QList <QByteArray> list = {QByteArray::fromHex("0001001400"), QByteArray::fromHex("0000001400")};
+        QByteArray payload = data.toByteArray();
+
+        switch (list.indexOf(payload.mid(0, 5)))
+        {
+            case 0:
+            {
+                Color color = Color::fromHS(qFromBigEndian(*reinterpret_cast <const quint16*> (payload.constData() + 5)) / 360.0, qFromBigEndian(*reinterpret_cast <const quint16*> (payload.constData() + 7)) / 1000.0);
+                map.insert("color", QList <QVariant> {static_cast <quint8> (color.r() * 0xFF), static_cast <quint8> (color.g() * 0xFF), static_cast <quint8> (color.b() * 0xFF)});
+                map.insert("colorMode", true);
+                break;
+            }
+
+            case 1:
+            {
+                map.insert("colorTemperature", round((1000 - qFromBigEndian(*reinterpret_cast <const quint16*> (payload.constData() + 7))) * 347 / 1000.0 + 153));
+                map.insert("colorMode", false);
+                break;
+            }
         }
     }
 

@@ -1,9 +1,7 @@
 #ifndef ADAPTER_H
 #define ADAPTER_H
 
-#define RECEIVE_TIMEOUT                 10
 #define BUFFER_LENGTH_LIMIT             8192
-
 #define ADAPTER_REQUEST_TIMEOUT         2000
 #define WATCHDOG_ERROR_COUNT            10
 
@@ -172,6 +170,8 @@ public:
     virtual bool setInterPanChannel(quint8 channel) = 0;
     virtual void resetInterPanChannel(void) = 0;
 
+    inline bool ready(void) { return m_ready; }
+
     inline QString manufacturerName(void) { return m_manufacturerName; }
     inline QString modelName(void) { return m_modelName; }
     inline QString firmware(void) { return m_firmware; }
@@ -201,14 +201,13 @@ protected:
     QTcpSocket *m_socket;
     QIODevice *m_device;
 
-    bool m_serialError;
+    bool m_ready, m_serialError, m_connected;
 
     QHostAddress m_adddress;
     quint16 m_port;
-    bool m_connected;
 
     QString m_bootPin, m_resetPin, m_reset;
-    quint16 m_panId;
+    quint16 m_timeout, m_panId;
     quint8 m_channel, m_power;
     bool m_write, m_watchdog, m_portDebug, m_adapterDebug;
 
